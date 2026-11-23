@@ -1068,7 +1068,7 @@ code { font-family: Consolas, monospace; font-size: .8em; }
   h1 .title-prefix,
   h1 .title-name { display: block; }
   .welcome-copy { max-width: 26rem; }
-  .portal-ring { width: min(42vw, 12rem); }
+  
 }
 
 @media (prefers-reduced-motion: reduce) {
