@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#000000">
+  <title>For mothereyyy</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600;700&family=Pacifico&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600;700&family=Pacifico&display=swap"></noscript>
+  <link rel="stylesheet" href="styles.css?v=20261124-wish">
+</head>
+<body data-screen="welcome">
+  <div class="ambient" aria-hidden="true">
+  </div>
+
+  <audio id="bgMusic" loop preload="auto" autoplay playsinline>
+    <source src="assets/audio.mp3" type="audio/mpeg">
+  </audio>
+
+  <div id="heartPortal" class="hp" aria-hidden="true">
+    <div class="hp-zoom">
+      <svg class="hp-heart" viewBox="0 0 100 90" preserveAspectRatio="xMidYMid meet">
+        <path class="hp-glow" d="M50 85C22 63 4 46 4 28 4 14 14 5 27 5c10 0 19 6 23 15 4-9 13-15 23-15 13 0 23 9 23 23 0 18-18 35-46 57z"/>
+        <path class="hp-mid" d="M50 85C22 63 4 46 4 28 4 14 14 5 27 5c10 0 19 6 23 15 4-9 13-15 23-15 13 0 23 9 23 23 0 18-18 35-46 57z"/>
+        <path class="hp-rim" d="M50 85C22 63 4 46 4 28 4 14 14 5 27 5c10 0 19 6 23 15 4-9 13-15 23-15 13 0 23 9 23 23 0 18-18 35-46 57z"/>
+      </svg>
+    </div>
+    <p class="hp-text">vanga<br>mothereyyy</p>
+  </div>
+
+    <div id="loader" class="loader" aria-live="polite" aria-hidden="true">
+    <div class="loader-glow">✦</div>
+    <div id="loaderWords" class="loader-words"></div>
+    <p id="loaderHint" class="loader-hint" hidden>(WAIT 13 SEC)</p>
+  </div>
+
+  <button id="soundButton" class="sound-button" type="button" aria-label="Turn background music on">
+    <span>♫</span><span class="sound-label">Play our song</span>
+  </button>
+  <div class="volume-control">
+    <label for="volumeSlider"><span>Volume</span><output id="volumeValue" for="volumeSlider">20%</output></label>
+    <input id="volumeSlider" type="range" min="0" max="100" value="20" step="1" aria-label="Music volume">
+  </div>
+
+  <main id="experience">
+    <section id="welcome" class="welcome-screen">
+      <div class="footprint-mark" aria-hidden="true">👣</div>
+      <p class="eyebrow">yuva</p>
+      <h1><span class="title-prefix">En</span> <span class="title-name">mothereyyy</span></h1>
+      <p class="welcome-copy">Ithu verum website illa en mind la irukura complete words aa kutty world aa create pannirukan about you.</p>
+       <p class="small-note">chorry ithu en friend uu ku nu solli emathiten unnaku than nan ellathiyum pannan mannichuu poi sonnathuku kochikatha😉</p>
+       <p class="small-note">Cherr ipo ulla polam aaa vanga</p>
+      <p class="day-strip" id="homeStrip"></p>
+      <button class="primary-button begin-button" type="button" data-next="stage1">
+        Touch to Enter our chinna ulagam <span>🫴</span>
+      </button>
+      <p class="small-note">✦</p>
+    </section>
+
+    <section id="stage1" class="stage stage-intro" data-stage="1" hidden>
+      <div class="stage-inner narrow">
+        <p class="eyebrow">Vanga polam</p>
+        <h2>Ithu namakana<br><em>chinna ulagam</em></h2>
+        <div class="opening-lines" aria-live="polite">
+          <p>Nee romba nal aa en kitta letter ketutu iruntha,</p>
+          <p>aana kuduka mudiyalla,</p>
+          <p>nee ennaku special,</p>
+          <p>so unnaku diffrent aa tharan.</p>
+          <p>unnaku pudikum nu namburen cherr vanga.</p>
+        </div>
+        <p class="wait-note">(👣)</p>
+        <figure class="hero-photo photo-frame">
+          <img decoding="async" src="assets/stage1.jpg" alt="A special photo of yuva" data-media>
+          <span class="media-placeholder">Add your first photo as <code>assets/stage1.jpg</code></span>
+        </figure>
+        <p class="stage-whisper">Scroll slowly. This place is only for you. ♡</p>
+        <button class="heart-path" type="button" data-next="stage2" aria-label="Open the wishes room">
+          <span>♥</span><small>Heart aa thodu next polam</small>
+        </button>
+      </div>
+    </section>
+
+    <section id="stage2" class="stage" data-stage="2" hidden>
+      <div class="stage-inner birthday-room">
+        <p class="eyebrow" id="wishEyebrow">wishes</p>
+        <h2 id="wishTitle">Wishes</h2>
+        <p class="day-strip" id="wishDate"></p>
+        <p class="countdown" id="countdown" hidden></p>
+        <p class="stage-lead" id="wishLead"></p>
+        <div class="cake-scene" id="wishScene"></div>
+        <p class="wish-line" id="wishLine"></p>
+        <button class="heart-path" type="button" data-next="stage3" aria-label="Open the memories">
+          <span>♥</span><small>follow the heart</small>
+        </button>
+      </div>
+    </section>
+
+    <section id="stage3" class="stage" data-stage="3" hidden>
+      <div class="stage-inner memories">
+        <p class="eyebrow">our best moments</p>
+        <h2>Little <em>memories</em></h2>
+        <p class="stage-lead">Ennaku ithu lam sadharana moments illa most lovable moments.</p>
+        <div class="memory-list">
+          <article class="memory memory-left">
+            <figure class="photo-frame"><img decoding="async" loading="lazy" src="assets/memory-01.jpg" alt="Memory one" data-media><span class="media-placeholder">memory-01.jpg</span></figure>
+            <p>intern la aramicha bond niyabagam irukaa ❄️</p>
+          </article>
+          <article class="memory memory-right">
+            <p>kutty trust la aramicha friendship ❄️</p>
+            <figure class="photo-frame"><img decoding="async" loading="lazy" src="assets/memory-02.jpg" alt="Memory two" data-media><span class="media-placeholder">memory-02.jpg</span></figure>
+          </article>
+          <article class="memory memory-left">
+            <figure class="photo-frame"><img decoding="async" loading="lazy" src="assets/memory-03.jpg" alt="Memory three" data-media><span class="media-placeholder">memory-03.jpg</span></figure>
+            <p>evalo cute moments random photoshoots❄️</p>
+          </article>
+          <article class="memory memory-right">
+            <p>happpy aa sirichi sandhosam aa irunthom ❄️</p>
+            <figure class="photo-frame"><img decoding="async" loading="lazy" src="assets/memory-04.jpg" alt="Memory four" data-media><span class="media-placeholder">memory-04.jpg</span></figure>
+          </article>
+          <article class="memory memory-left">
+            <figure class="photo-frame"><img decoding="async" loading="lazy" src="assets/memory-05.jpg" alt="Memory five" data-media><span class="media-placeholder">memory-05.jpg</span></figure>
+            <p>evalo love and care share pannom❄️</p>
+          </article>
+          <article class="memory memory-right">
+            <p>aana ipo nee ennaku evalo important theriyum aa itha emoji thodu❄️</p>
+            <figure class="photo-frame"><img decoding="async" loading="lazy" src="assets/memory-06.jpg" alt="Memory six" data-media><span class="media-placeholder">memory-06.jpg</span></figure>
+          </article>
+        </div>
+        <div class="secret-wrap">
+          <button id="secretButton" class="snow-secret" type="button" aria-expanded="false">
+            <span>❄️</span><small>itha thodu</small>
+          </button>
+          <div id="secretMemory" class="secret-memory" hidden>
+            <figure class="photo-frame secret-photo">
+              <img decoding="async" loading="lazy" src="assets/secret-memory.jpg" alt="A secret special memory" data-media>
+              <span class="media-placeholder">secret-memory.jpg</span>
+            </figure>
+            <p>ipdi usuraa ninikira kutty circle la neeyum oruthi aava nu ninachi kooda paakala😣</p>
+          </div>
+        </div>
+        <button class="heart-path" type="button" data-next="stage4" aria-label="Open the promise garden">
+          <span>♥</span><small>follow the heart</small>
+        </button>
+      </div>
+    </section>
+
+    <section id="stage4" class="stage" data-stage="4" hidden>
+      <div class="stage-inner promises">
+        <p class="eyebrow">👣</p>
+        <h2>Promise <em>mothereyyy</em></h2>
+        <p class="stage-lead">Touch pannu every envelope aa. Each one holds my Promises.</p>
+        <div class="envelope-stack">
+          <button class="envelope promise-envelope" type="button">
+            <span class="envelope-title">Promise👣</span>
+            <span class="envelope-letter">epovum un kuda support aa irupan nee sonna mathiri unniyum un sitivation iyum epovum purinjika try pannuvan</span>
+          </button>
+          <button class="envelope promise-envelope" type="button">
+            <span class="envelope-title">Promise👣</span>
+            <span class="envelope-letter">un kastatha pooka mudiyala nalum unna thaniya kasta pada vida matten oru kutty aaruthal aa kuda irupan</span>
+          </button>
+          <button class="envelope promise-envelope" type="button">
+            <span class="envelope-title">Promise👣</span>
+            <span class="envelope-letter">nee enna evalo kaya paduthunalum un mela thuli alavu kooda ego varathu self respect laam ethir paakavey matten athu</span>
+          </button>
+           <button class="envelope promise-envelope" type="button">
+            <span class="envelope-title">Promise👣</span>
+            <span class="envelope-letter">distance vandhalum life busy aanalum unnaku importance kuduka maraka matten late replyss call pic pannama irukurathu romba important work aa iruntha mattum than varathu mathapadi oodi vanthuduvan athu unnakey theriyum😂</span>
+          </button>
+          <button class="envelope promise-envelope" type="button">
+            <span class="envelope-title">Promise👣</span>
+            <span class="envelope-letter">nee unniye doubt pannumpothu nee ennaku evalo special nu remaind pannitey irupan</span>
+          </button>
+          <button class="envelope request-envelope" type="button">
+            <span class="envelope-title">yenn nee ennaku important person theriyum aa💕</span>
+            <span class="envelope-letter">மகன் மகன் nu oru kolantha mathiri suthi suthi varuva🥹 , en situvation aa purinjikitta , ennaku aaruthal kudutha , ennaku nee mattum than priority kudutha , sirika vachaa, kasta patta kooda iruntha 
+              and some how oru point la friend ngra relationship aa vendam nu ellar kittiyum sonnan ellariyum brother or akka nu than address pannan athu life la normal aa circle kulla varavngaluvu kuduthan for their limits but friendship nu silar aa tha
+              en na en life la friend nu oru relationship than ennaku romba mukiyamanavanga nu irupan mathavanga mela kooda expectations oo vitutu pona kooda kavala pada matten
+              ana silar mattum than friendship ngra tag la irukanga en trust a gain pannavanga , enna prioritize pannavanga enna purinjikittavanga genune aa love and care kuduthavanga ithellam nee kudutha 
+               then you gained the title as friendship so you are in my closest circle as first person❄️ so nee enn friend bestest frienduu nu ethukitten💕 
+
+
+             </span>
+          </button>
+          <button class="envelope request-envelope" type="button">
+            <span class="envelope-title">ennakaga itha mattum sei please🫀</span>
+            <span class="envelope-letter">evalo kastam vanthalum en kitta odi vanga ethuva irunthalum marikama enkitta sollidu mothereyyy nan than aa enna sollida poren nee sollu athu pothum ennaku 
+              ennaku unkitta irunthu vara random 4+ messages , random phone calls , voice notes pictures laam avalo pudikum ithellam nan miss pannama pathuko trust aa mattum odachidatha pleacheee🫳
+            ellar kittiyum pesu, manasula pattathu sollidu yar aa irunthalum 
+            pudikatha visiyathuku no solli palagu 
+              life always namma plan panna mathiri pogathu some times people leave aagalam situvations maralam dreams change aagalam aana enna nadanthalum unna neeya tholachikatha nee neeya iru mathavangallukaga mathikatha health aa paathuko santhosam aa iru nan irukan 
+            unnaku happyness thara visiyatha mattum senjitu happyaa iru
+            ok vanga 🫀
+            
+            
+            </span>
+          </button>
+        </div>
+        <button class="heart-path" type="button" data-next="stage5" aria-label="Open the slam">
+          <span>♥</span><small>follow the heart</small>
+        </button>
+      </div>
+    </section>
+
+    <section id="stage5" class="stage" data-stage="5" hidden>
+      <div class="stage-inner slam">
+        <p class="eyebrow">Sorry😣</p>
+        <h2>Intha Unnakana <em>Slam</em></h2>
+        <p class="stage-lead">nan unnaku eluthi kudukama vitta slam en manasula irukura each and every words.</p>
+        <button id="postcard" class="postcard" type="button" aria-expanded="false">
+          <span class="postcard-stripe" aria-hidden="true"></span>
+          <span class="postcard-label">POST CARD</span>
+          <span class="postcard-stamp">👣</span>
+          <span class="postcard-mark" aria-hidden="true">MOTHEREYYY<br>♥ ♥ ♥</span>
+          <span class="postcard-left"><span class="postcard-hello">Dear mothereyyy,</span><span class="postcard-prompt">Thodu mothereyyy padichi par ♥</span></span>
+          <span class="postcard-address"><span class="postcard-line">To: mothereyyy</span><span class="postcard-line">From: un மகன்</span><span class="postcard-line"></span></span>
+        </button>
+        <form id="letterGate" class="letter-gate" hidden>
+          <p class="letter-gate-title">ithu unnakana personal tetter so nee mattum than unlock pannanum♥</p>
+          <label for="letterPassword">Enter password</label>
+          <div class="letter-gate-row">
+            <input id="letterPassword" type="password" autocomplete="off" required>
+            <button type="submit">Unlock</button>
+          </div>
+          <p id="letterGateMessage" class="letter-gate-message" role="status" aria-live="polite"></p>
+        </form>
+        <article id="letter" class="letter" hidden>
+          <div class="letter-top">
+            <span>for yuva</span><span>♡</span><span>for mothereyyy</span>
+          </div>
+          <div class="letter-body">
+            <p>epdi aaramikirathunu theriyalla 😁 sari manasula pattathu solliduren sariyaa 🤗 first irunthu start pannuran unnaku niyabagam Iruka first namba bodi bus stand near irukura karna hotel la than first first pesunom nee kooda friend aa irukalam nu sonna but nan friendship mela nambikai illa nu sonnan then ipo paru unnala than namba 15 idiots koodava friend aa irukan 😇 time romba fast aa pogiduchi la neriya class cut adichirukom neriya pesirukom reels aa share pannirukom happy moments Athellam ennaku 🥹 amma kitta ennaku pudichathey kastam na share pannipa , ennaku importance kudupa ennaku aruthal Venum nalum unnaku aruthal Venum nalum rendu perum pesi solve pannipom, ennaku guidence kudupa , correct path la kootitu pova en life aa purinjikitta, amaithiya iruntha sirika vaipa and aasiya sapadu ooti viduva these all makes you soo special then everyone apram strong aa irupa ella situation liyum athum pudikum so nan amma nu kupdurathula thappu illa than aa mahhhh🥹</p>
+            <p>Sonna epdi eduthupa nu theriyalla ithu variyum yarum ennaku priority kuduthathey illa thanks 🙏 enniyum oru aala mathichi enna sirika vachathuku</p>
+            <p>Unna naan evlo miss panren nu solla vaarthaiye illa. Sila neram phone gallery la namma photos paapen, sila neram chats padipen, appo ellam oru kelvi dhaan varum "Indha days ellam thirumba varaadha?" nu. Un kooda spend panna andha chinna chinna moments kooda ippo enakku periya memories ah maari poiduchu. Nee en friend nu sollradha vida, nee enakku family nu sonna dhaan correct ah irukum.</p>
+            <p>nee eppovum santhoshama irukanum. Un face la irukkura andha smile eppovum marakkama irukanum. Life unakku kudukka pora ella nalla vishayangalum nee deserve panra maariye kidaikanum. Un dreams ellam nijamaaganum, un heart la irukkura ella aasaiyum niraiveranum. Naan un kooda daily pesa mudiyalanaalum, daily paaka mudiyalanaalum, nee ennaku eppovum special person than oru friend aa oru sister aa amma va 🥲</p>
+            <p>Sari thambi kaga ithellam pannuviyaa<br>Correct time ku sapdanum ❤️‍🩹<br>Time ku thunganum 🤌<br>Odanji poga koodathu thairiyam aa face pannanum ellathiyum 🫂<br>Ethiyum manasukulla vachika koodathu open aa pesidanum ellar kittiyum 🙂‍↕️<br>Happy aa pudichatha pannanum 🫀</p>
+            <p>Unnaku ella urimiyum Iruku kaaa enna thittu , adi, otha, sanda podu , kochiko oru thambi aa ella rights um unnaku Iruku sariyaaaa</p>
+            <p>Evalo sanda potalum Evalo asinga paduthunalum nee koopta thirumbi oodi vanthuduvan kaa unkitta ego self-respect ithu ethuvum aa illa sariya happy aa iru</p>
+            <p>Unnaku nan important person oo illiyoo but nee ennoda most important persons la oruthangalla irupa life fulla</p>
+            <p>Nan irukan🫴</p>
+            <p data-bday>So finally happy birthday mahhhh🫀😇</p>
+            <p>Namma mudhala pesina naal enakku innum nalla nyabagam irukku... rendu strangers madhiri casual-a pesi aarambichom. Appo oru naal nee enakku ivlo mukkiyamaana person aagiduva-nu naan nenachadhe illa.</p>
+            <p>Innikku nee en friend mattum illa... nee dhaan en safe space, en peace, en comfort zone<br>Vaazhkai romba kashtama irukkum bodhu, en manasu romba sorndhu poidum bodhu, naan ninaikkura persons la neeyum oruthanga dhaan.</p>
+            <p>Nee en ella problems-um solve panniduva-nu illa... aana nee irukkura presence mattum podhum, ella kashtamum konjam lighter-a feel aagudhu.</p>
+            <p>Naan sila neram unnai irritate pannuven, reason illaama tease pannuven, childish-a nadandhukuven, kovapaduven...</p>
+            <p>Un kitta irukkumbodhu naan edhaiyum pretend panna vendiyadhu illa.<br>En kanneerai maraikka vendiyadhu illa.<br>Fake-a sirikka vendiyadhu illa.</p>
+            <p>Adhu dhaan indha ulagathula kidaikkura azhagana unarvugal la onnu.</p>
+            <p>Enakku aayiram friends venum-nu illa.<br>Periya circle venum-nu illa.<br>Yendha situation-layum kooda kooda irukkura oru person podhum...</p>
+            <p>Andha person nee dhaan.</p>
+            <p>Vaazhkai namma rendu perayum enga kondu ponaalum, evlo busy aanaalum, indha unmaiyana friendship-kku thirumbi vara vazhiya eppovum kandupidippom-nu enakku promise pannidu.</p>
+            <p>Nee en best friend mattum illa en motheyyyy ...</p>
+            <p>I don't know whether this letter will make you laugh, cry, get embarrassed, or call me “dei maganee enna da idhellam” 😒😂. Maybe all of them. But whatever your reaction is, just know that I wrote every word because you asked me for it... and because somewhere along the way, <strong>you became someone worth writing all of this for.</strong></p>
+            <p>If life takes us far away, I'll still be grateful that our paths crossed.<br>If we become busy, I'll still remember.<br>If years pass, I'll still have these memories.<br>If we meet less, I'll still hope the bond stays.</p>
+            <p>And if someday you miss me...</p>
+            <p><strong>just come back to these words.</strong> 🫂</p>
+            <p>Because this is the one thing I want you to remember:</p>
+            <p><strong>Unakku naan evlo important nu enakku theriyadhu...<br>aana nee enakku evlo important nu naan marakka maaten.</strong> 🫀❤️‍🩹</p>
+            <p><strong>Don't become a stranger, okay?</strong> 🫂❄️</p>
+            <p>Because I don't just want to remember you as someone who was once part of my college life.</p>
+            <p>sorry intha slam unna kaya paduthuna mannichidu romba thanks enniyum oru alaaa mathichi ennaku anbum akariyum kuduthathuku enna purinjikittathuku enna prioritize pannathuku<br>and thanks for every thing</p>
+          </div>
+        </article>
+        <button class="heart-path" type="button" data-next="stage6" data-final="true" aria-label="Open happiness">
+          <span>♥</span><small>namba moments aa papom aa</small>
+        </button>
+      </div>
+    </section>
+
+    <section id="stage6" class="stage" data-stage="6" hidden>
+      <div class="stage-inner happiness">
+        <p class="eyebrow">Nambaloda alagana memories </p>
+        <h2>Happyness <em>forever</em></h2>
+        <p class="stage-lead">ithellam verum photos mattum illa ennoda happyness✦</p>
+        <div class="final-media">
+          <figure class="photo-frame"><img decoding="async" loading="lazy" src="assets/memory-01.jpg" alt="Memory one" data-media><span class="media-placeholder">memory-01.jpg</span></figure>
+          <figure class="photo-frame"><img decoding="async" loading="lazy" src="assets/memory-02.jpg" alt="Memory two" data-media><span class="media-placeholder">memory-02.jpg</span></figure>
+          <figure class="photo-frame"><img decoding="async" loading="lazy" src="assets/memory-03.jpg" alt="Memory three" data-media><span class="media-placeholder">memory-03.jpg</span></figure>
+          <figure class="photo-frame"><img decoding="async" loading="lazy" src="assets/memory-04.jpg" alt="Memory four" data-media><span class="media-placeholder">memory-04.jpg</span></figure>
+          <figure class="photo-frame"><img decoding="async" loading="lazy" src="assets/memory-05.jpg" alt="Memory five" data-media><span class="media-placeholder">memory-05.jpg</span></figure>
+          <figure class="photo-frame"><img decoding="async" loading="lazy" src="assets/memory-06.jpg" alt="Memory six" data-media><span class="media-placeholder">memory-06.jpg</span></figure>
+          <figure class="photo-frame"><img decoding="async" loading="lazy" src="assets/happiness-01.jpg" alt="Happy memory one" data-media><span class="media-placeholder">happiness-01.jpg</span></figure>
+          <figure class="photo-frame"><img decoding="async" loading="lazy" src="assets/happiness-02.jpg" alt="Happy memory two" data-media><span class="media-placeholder">happiness-02.jpg</span></figure>
+          <figure class="photo-frame"><img decoding="async" loading="lazy" src="assets/happiness-03.jpg" alt="Happy memory three" data-media><span class="media-placeholder">happiness-03.jpg</span></figure>
+          <figure class="photo-frame"><img decoding="async" loading="lazy" src="assets/happiness-04.jpg" alt="Happy memory four" data-media><span class="media-placeholder">happiness-04.jpg</span></figure>
+          <figure class="photo-frame"><img decoding="async" loading="lazy" src="assets/happiness-15.jpg" alt="Happy memory fifteen" data-media><span class="media-placeholder">happiness-15.jpg</span></figure>
+          <figure class="photo-frame"><img decoding="async" loading="lazy" src="assets/happiness-06.jpg" alt="Happy memory six" data-media><span class="media-placeholder">happiness-06.jpg</span></figure>
+          <figure class="photo-frame"><img decoding="async" loading="lazy" src="assets/happiness-07.jpg" alt="Happy memory seven" data-media><span class="media-placeholder">happiness-07.jpg</span></figure>
+          <figure class="photo-frame"><img decoding="async" loading="lazy" src="assets/happiness-08.jpg" alt="Happy memory eight" data-media><span class="media-placeholder">happiness-08.jpg</span></figure>
+          <figure class="photo-frame"><img decoding="async" loading="lazy" src="assets/happiness-09.jpg" alt="Happy memory nine" data-media><span class="media-placeholder">happiness-09.jpg</span></figure>
+          <figure class="photo-frame"><img decoding="async" loading="lazy" src="assets/happiness-10.jpg" alt="Happy memory ten" data-media><span class="media-placeholder">happiness-10.jpg</span></figure>
+          <figure class="photo-frame"><img decoding="async" loading="lazy" src="assets/happiness-11.jpg" alt="Happy memory eleven" data-media><span class="media-placeholder">happiness-11.jpg</span></figure>
+          <figure class="photo-frame"><img decoding="async" loading="lazy" src="assets/happiness-12.jpg" alt="Happy memory twelve" data-media><span class="media-placeholder">happiness-12.jpg</span></figure>
+          <figure class="photo-frame"><img decoding="async" loading="lazy" src="assets/happiness-13.jpg" alt="Happy memory thirteen" data-media><span class="media-placeholder">happiness-13.jpg</span></figure>
+          <figure class="photo-frame"><img decoding="async" loading="lazy" src="assets/happiness-14.jpg" alt="Happy memory fourteen" data-media><span class="media-placeholder">happiness-14.jpg</span></figure>
+          <figure class="photo-frame"><img decoding="async" loading="lazy" src="assets/happiness-05.jpg" alt="Happy memory five" data-media><span class="media-placeholder">happiness-05.jpg</span></figure>
+          <figure class="photo-frame"><img decoding="async" loading="lazy" src="assets/stage1.jpg" alt="Happy memory fifteen" data-media><span class="media-placeholder">stage1.jpg</span></figure>
+          <figure class="photo-frame"><img decoding="async" loading="lazy" src="assets/happiness-16.jpg" alt="Happy memory sixteenth" data-media><span class="media-placeholder">happiness-16.jpg</span></figure>
+          <figure class="photo-frame"><img decoding="async" loading="lazy" src="assets/secret-memory.jpg" alt="Happy memory sixteen" data-media><span class="media-placeholder">secret-memory.jpg</span></figure>
+          <div class="video-frame optional-video" data-optional-video hidden>
+            <video controls preload="metadata" poster="assets/video-poster-01.jpg">
+              <source src="assets/happiness-video-01.mp4" type="video/mp4">
+            </video>
+          </div>
+          <div class="video-frame optional-video" data-optional-video hidden>
+            <video controls preload="metadata" poster="assets/video-poster-02.jpg">
+              <source src="assets/happiness-video-02.mp4" type="video/mp4">
+            </video>
+          </div>
+          <div class="video-frame optional-video" data-optional-video hidden>
+            <video controls preload="metadata" poster="assets/video-poster-03.jpg">
+              <source src="assets/happiness-video-03.mp4" type="video/mp4">
+            </video>
+          </div>
+          <div class="video-frame optional-video" data-optional-video hidden>
+            <video controls preload="metadata" poster="assets/video-poster-04.jpg">
+              <source src="assets/happiness-video-04.mp4" type="video/mp4">
+            </video>
+          </div>
+          <div class="video-frame optional-video" data-optional-video hidden>
+            <video controls preload="metadata" poster="assets/video-poster-05.jpg">
+              <source src="assets/happiness-video-05.mp4" type="video/mp4">
+            </video>
+          </div>
+        </div>
+        <div class="final-note">
+          <span>👣</span>
+          <p>thanks for every thing .<br><strong>Love and care by your மகன் as always.</strong></p>
+          <span>👣</span>
+        </div>
+        <button id="sonLink" class="primary-button son-link" type="button">did you want to see your son memories</button>
+        <button class="restart-button" type="button" data-next="welcome">touch panna marpadiyum first la irunthu paakalam illa en kitta call or message panni pesuriyaa venna mavalee↺</button>
+      </div>
+    </section>
+  </main>
+  <script src="script.js?v=20261124-wish"></script>
+</body>
+</html>
