@@ -108,7 +108,7 @@ async function goTo(destinationId, isFinalPath = false) {
 
   if (isFinalPath) {
     await showLoader(
-      ["Nan irukan unnaku for our friendship❄️", "love you as always by your மகன் 🫀", "nan pesunathu hurt panna sorry mannichidu 😓", "Thanks for each and everything yuva❄️"],
+      ["Nan irukan❄️", "i just love you ,care and adore you as always by your friend , brother and also as your's மகன் 🫀", "nan pesunathu hurt panna sorry mannichidu 😓", "Thanks for each and everything yuva mahh❄️"],
       13000, true
     );
   }
@@ -673,7 +673,7 @@ const FEST = {
   diwali: ["Diwali", "தீபாவளி நல்வாழ்த்துக்கள்", "wall", "diya", "#7a2d10", "Deepavali vanthachu! Irul ellam vilagi velicham nirayatum 🪔", ["lamp aa thodu, velicham varum 🪔", "sweets saapidu, pathirama vedi 🎇", "santhosam un veetula nirayatum ✨"], "🪔 ✦ 🪔"],
   karthigai: ["Karthigai Deepam", "கார்த்திகை தீப வாழ்த்துக்கள்", "wall", "diya", "#6b2410", "Agal vilakku erinjidum, un life velichama irukatum 🪔", ["vilakku pola velichama iru 🪔", "irul ellam vilagum ✨", "naan irukan always ❄️"], "🪔 🌕 🪔"],
   gandhi: ["Gandhi Jayanthi", "காந்தி ஜெயந்தி", "wall", "🕊️", "#4a4a3a", "Amaithiyum anbum eppovum irukatum 🕊️", ["amaithi 🕊️", "anbu 🫀", "nambikkai ✨"], "🕊️ ✦ 🕊️"],
-  xmas: ["Christmas", "Merry Christmas", "wall", "⭐", "#14502a", "Merry Christmas! 🎄", ["santhosam star pola jolikatum ⭐", "gift pola surprise vaazhkai 🎁", "love you more ❄️"], "🎄 ⭐ 🎄"],
+  xmas: ["Christmas", "Merry Christmas", "wall", "⭐", "#14502a", "Merry Christmas! 🎄", ["santhosam star pola jolikatum ⭐", "gift pola surprise vaazhkai 🎁", "happy aa iru ❄️"], "🎄 ⭐ 🎄"],
   nye: ["New Year's Eve", "Happy New Year Eve", "wall", "🎇", "#1f2a52", "Ithu varusham santhosama mudiyatum, adutha varusham athai vida nalla irukatum 🎇", ["ella nalla nyabagamum ❄️", "adutha varusham un varusham ✨", "naan irukan 🫀"], "🎇 ✦ 🎇"]
 };
 /* repeats every year (month-day) */
