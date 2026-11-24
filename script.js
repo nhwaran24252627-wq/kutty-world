@@ -91,7 +91,9 @@ function startOpeningLines() {
   });
 }
 
-const caption = $("#travelCaption");
+const zoom = $("#heartZoom");
+const zoomHeart = $("svg", zoom);
+const zoomText = $(".hz-text", zoom);
 const wait = (ms) => new Promise((r) => window.setTimeout(r, ms));
 const stageOrder = ["welcome", "stage1", "stage2", "stage3", "stage4", "stage5", "stage6"];
 
@@ -105,6 +107,38 @@ function swapScreen(destination) {
   if (destination.id === "stage1") startOpeningLines();
 }
 
+/* heart pops in with the text, beats, then we zoom inside it and come out on the next page */
+async function heartTransition(destination) {
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const full = Math.max(innerWidth, innerHeight) / 144 * 4.2;
+  zoom.classList.add("on");
+  zoomHeart.style.transform = "scale(0)";
+  zoomText.style.opacity = "0";
+  const ease = "cubic-bezier(.2,.8,.2,1)";
+
+  await zoomHeart.animate([{ transform: "scale(0)" }, { transform: "scale(1.15)" }, { transform: "scale(1)" }],
+    { duration: reduce ? 1 : 650, easing: ease, fill: "forwards" }).finished;
+  zoomText.animate([{ opacity: 0, transform: "translateY(10px)" }, { opacity: 1, transform: "none" }],
+    { duration: 450, easing: "ease-out", fill: "forwards" });
+  await zoomHeart.animate([{ transform: "scale(1)" }, { transform: "scale(1.14)" }, { transform: "scale(1)" }, { transform: "scale(1.1)" }, { transform: "scale(1)" }],
+    { duration: reduce ? 1 : 1000, easing: "ease-in-out", fill: "forwards" }).finished;
+
+  zoomText.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 380, fill: "forwards" });
+  await zoomHeart.animate([{ transform: "scale(1)" }, { transform: "scale(" + full + ")" }],
+    { duration: reduce ? 1 : 950, easing: "cubic-bezier(.65,0,.9,.4)", fill: "forwards" }).finished;
+
+  swapScreen(destination);
+  zoom.style.background = "#c00f26";
+  zoomHeart.style.display = "none";
+  await zoom.animate([{ opacity: 1 }, { opacity: 0 }], { duration: reduce ? 1 : 700, easing: "ease-out", fill: "forwards" }).finished;
+  zoom.getAnimations().forEach((x) => x.cancel());
+  zoomHeart.getAnimations().forEach((x) => x.cancel());
+  zoomText.getAnimations().forEach((x) => x.cancel());
+  zoomHeart.style.display = "";
+  zoom.style.background = "";
+  zoom.classList.remove("on");
+}
+
 async function goTo(destinationId, isFinalPath = false) {
   if (isTransitioning) return;
   const destination = document.getElementById(destinationId);
@@ -112,28 +146,16 @@ async function goTo(destinationId, isFinalPath = false) {
   isTransitioning = true;
 
   if (isFinalPath) {
-    warp.boost(0.5);
     await showLoader(
       ["Nan irukan unnaku for our friendship❄️", "love you as always by your மகன் 🫀", "nan pesunathu hurt panna sorry mannichidu 😓", "Thanks for each and everything yuva❄️"],
       13000, true, "final"
     );
+    swapScreen(destination);
+    hideLoader();
+    destination.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 600, easing: "ease-out" });
   } else {
-    caption.textContent = activeScreen.id === "welcome" ? "vanga mothereyyy ✦" : "vanga mothereyyy";
-    caption.classList.add("show");
-    warp.boost(1);
-    activeScreen.classList.add("fly-out");
-    await wait(700);
-    activeScreen.classList.remove("fly-out");
+    await heartTransition(destination);
   }
-
-  swapScreen(destination);
-  destination.classList.add("fly-in");
-  hideLoader();
-  warp.boost(0);
-  await wait(isFinalPath ? 200 : 450);
-  caption.classList.remove("show");
-  await wait(550);
-  destination.classList.remove("fly-in");
   isTransitioning = false;
 }
 
@@ -257,83 +279,6 @@ letterGate.addEventListener("submit", (event) => {
 });
 
 
-/* ---------- deep space: canvas starfield / warp / comets ---------- */
-const warp = (() => {
-  const cv = document.createElement("canvas");
-  cv.id = "warp";
-  $(".ambient").after(cv);
-  const ctx = cv.getContext("2d");
-  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const tints = ["255,255,255", "255,236,228", "255,190,175", "255,90,80", "200,220,255"];
-  const IDLE = 0.00022;
-  let W = 0, H = 0, speed = IDLE, target = IDLE, stars = [], comets = [], dust = [], last = performance.now(), nextComet = 3000;
-
-  const seed = (s, fresh) => {
-    s.x = (Math.random() - .5) * 2.4; s.y = (Math.random() - .5) * 2.4;
-    s.z = fresh ? Math.random() : 1; s.t = tints[(Math.random() * tints.length) | 0] ;
-    s.r = .5 + Math.random() * 1.3; return s;
-  };
-  function resize() {
-    const d = Math.min(devicePixelRatio || 1, 2);
-    W = innerWidth; H = innerHeight; cv.width = W * d; cv.height = H * d; ctx.setTransform(d, 0, 0, d, 0, 0);
-    stars = Array.from({ length: Math.round(Math.min(380, W * H / 3400)) }, () => seed({}, true));
-    dust = Array.from({ length: 14 }, () => ({ x: Math.random() * W, y: Math.random() * H, r: 60 + Math.random() * 140, vx: (Math.random() - .5) * .08, vy: (Math.random() - .5) * .05, a: .02 + Math.random() * .05 }));
-  }
-  const project = (s, z) => [W / 2 + s.x / z * W * .22, H / 2 + s.y / z * W * .22];
-
-  function frame(now) {
-    const dt = Math.min(50, now - last); last = now;
-    speed += (target - speed) * .07;
-    ctx.clearRect(0, 0, W, H);
-
-    dust.forEach((p) => {
-      p.x += p.vx; p.y += p.vy;
-      if (p.x < -200) p.x = W + 200; if (p.x > W + 200) p.x = -200;
-      if (p.y < -200) p.y = H + 200; if (p.y > H + 200) p.y = -200;
-      const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r);
-      g.addColorStop(0, `rgba(190,14,32,${p.a})`); g.addColorStop(1, "rgba(0,0,0,0)");
-      ctx.fillStyle = g; ctx.fillRect(p.x - p.r, p.y - p.r, p.r * 2, p.r * 2);
-    });
-
-    const fast = speed > .004;
-    stars.forEach((s) => {
-      const pz = s.z; s.z -= speed * dt;
-      if (s.z <= .03) { seed(s, false); return; }
-      const [x, y] = project(s, s.z);
-      if (x < -50 || x > W + 50 || y < -50 || y > H + 50) { if (fast) seed(s, false); }
-      const a = Math.min(1, (1 - s.z) * 1.6 + .25);
-      ctx.strokeStyle = `rgba(${s.t},${a})`; ctx.fillStyle = ctx.strokeStyle;
-      if (fast) {
-        const [px, py] = project(s, Math.min(1.2, pz + speed * dt * 2.6));
-        ctx.lineWidth = s.r * (1.1 - s.z * .5); ctx.lineCap = "round";
-        ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(x, y); ctx.stroke();
-      } else {
-        ctx.beginPath(); ctx.arc(x, y, s.r * (1.05 - s.z * .6), 0, 6.283); ctx.fill();
-      }
-    });
-
-    nextComet -= dt;
-    if (nextComet < 0 && !reduce) {
-      nextComet = 6000 + Math.random() * 9000;
-      const ang = .35 + Math.random() * .45, sp = .55 + Math.random() * .5;
-      comets.push({ x: Math.random() * W * .8, y: -20, vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp, life: 1 });
-    }
-    comets = comets.filter((c) => c.life > 0);
-    comets.forEach((c) => {
-      c.x += c.vx * dt; c.y += c.vy * dt; c.life -= dt / 2600;
-      const len = 150, g = ctx.createLinearGradient(c.x, c.y, c.x - c.vx * len, c.y - c.vy * len);
-      g.addColorStop(0, `rgba(255,235,228,${c.life})`); g.addColorStop(.3, `rgba(255,70,60,${c.life * .5})`); g.addColorStop(1, "rgba(120,0,10,0)");
-      ctx.strokeStyle = g; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(c.x, c.y); ctx.lineTo(c.x - c.vx * len, c.y - c.vy * len); ctx.stroke();
-      ctx.fillStyle = `rgba(255,255,255,${c.life})`; ctx.beginPath(); ctx.arc(c.x, c.y, 2, 0, 6.283); ctx.fill();
-    });
-    requestAnimationFrame(frame);
-  }
-  addEventListener("resize", resize);
-  resize();
-  requestAnimationFrame(frame);
-  return { boost: (v) => { target = reduce ? IDLE : IDLE + v * .03; } };
-})();
-
 /* ---------- realistic planets (SVG textures: noise + lighting) ---------- */
 function buildSpace() {
   const amb = $(".ambient");
@@ -352,30 +297,20 @@ function buildSpace() {
   });
 }
 
-/* ---------- final page: memories one below another ---------- */
+/* ---------- final page: memories one below another (plain scroll, no captions) ---------- */
 function buildMemoryStack() {
   const holder = $(".final-media");
   if (!holder) return;
-  const items = [...holder.children];
-  let n = 0;
-  items.forEach((item) => {
+  [...holder.children].forEach((item) => {
     const step = document.createElement("div");
     step.className = "memory-step";
     holder.insertBefore(step, item);
     step.appendChild(item);
-    const label = document.createElement("span");
-    label.className = "step-label";
-    label.innerHTML = item.matches(".video-frame") ? "<b>✦</b> moment" : "memory <b>" + String(++n).padStart(2, "0") + "</b>";
-    step.appendChild(label);
-    if (item.matches(".video-frame")) step.hidden = item.hidden;
+    if (item.matches(".video-frame")) {
+      step.hidden = item.hidden;
+      new MutationObserver(() => { step.hidden = item.hidden; }).observe(item, { attributes: true, attributeFilter: ["hidden"] });
+    }
   });
-  $$(".video-frame", holder).forEach((v) => {
-    new MutationObserver(() => { v.closest(".memory-step").hidden = v.hidden; }).observe(v, { attributes: true, attributeFilter: ["hidden"] });
-  });
-  const io = new IntersectionObserver((entries) => entries.forEach((e) => {
-    if (e.isIntersecting) { e.target.classList.add("seen"); io.unobserve(e.target); }
-  }), { threshold: .12, rootMargin: "0px 0px -6% 0px" });
-  $$(".memory-step", holder).forEach((el) => io.observe(el));
 }
 
 buildSpace();
