@@ -3,9 +3,6 @@ const $$ = (selector, parent = document) => [...parent.querySelectorAll(selector
 
 const audio = $("#bgMusic");
 const soundButton = $("#soundButton");
-const loader = $("#loader");
-const loaderWords = $("#loaderWords");
-const loaderHint = $("#loaderHint");
 const volumeSlider = $("#volumeSlider");
 const volumeValue = $("#volumeValue");
 let activeScreen = $("#welcome");
@@ -64,38 +61,19 @@ async function tryPlayMusic() {
   }
 }
 
-function showLoader(words, duration, showWaitHint = false, mode = "standard") {
-  loaderWords.replaceChildren();
-  loaderHint.hidden = !showWaitHint;
-  words.forEach((word, index) => {
-    const line = document.createElement("span");
-    line.textContent = word;
-    line.style.animationDelay = (index * .9) + "s";
-    loaderWords.appendChild(line);
-  });
-  loader.classList.add("active");
-  loader.setAttribute("aria-hidden", "false");
-  return new Promise((resolve) => window.setTimeout(resolve, duration));
-}
-
-function hideLoader() {
-  loader.classList.remove("active");
-  loader.setAttribute("aria-hidden", "true");
-}
-
 function startOpeningLines() {
   const lines = $$(".opening-lines p");
   lines.forEach((line) => line.classList.remove("visible"));
   lines.forEach((line, index) => {
-    window.setTimeout(() => line.classList.add("visible"), index * 130);
+    window.setTimeout(() => line.classList.add("visible"), index * 1000);
   });
 }
 
 const heartPortal = $("#heartPortal");
-const heartSparks = $(".hp-sparks", heartPortal);
 const wait = (ms) => new Promise((r) => window.setTimeout(r, ms));
 const stageOrder = ["welcome", "stage1", "stage2", "stage3", "stage4", "stage5", "stage6"];
-const HEART_SWAP_MS = 640;
+const HEART_SWAP_MS = 1050;
+const HEART_TOTAL_MS = 1500;
 
 function swapScreen(destination) {
   activeScreen.hidden = true;
@@ -105,29 +83,16 @@ function swapScreen(destination) {
   document.body.style.setProperty("--step", Math.max(0, stageOrder.indexOf(destination.id)));
   window.scrollTo(0, 0);
   if (destination.id === "stage1") startOpeningLines();
-  if (destination.id === "stage6") window.setTimeout(fireworks, 500);
 }
 
-/* transparent glass heart pops in with the text, beats, then the camera flies inside it */
+/* only a transparent blue-bordered heart: pops in, beats, then the camera zooms inside its centre */
 function playHeartZoom() {
-  heartSparks.replaceChildren();
-  for (let i = 0; i < 18; i += 1) {
-    const bit = document.createElement("span");
-    const angle = (i / 18) * Math.PI * 2 + Math.random() * .4;
-    const dist = 140 + Math.random() * Math.max(innerWidth, innerHeight) * .5;
-    bit.textContent = i % 3 === 0 ? "✦" : "♥";
-    bit.style.setProperty("--dx", Math.cos(angle) * dist + "px");
-    bit.style.setProperty("--dy", Math.sin(angle) * dist + "px");
-    bit.style.setProperty("--s", (.7 + Math.random() * 1.3) + "rem");
-    bit.style.setProperty("--d", (.28 + Math.random() * .3) + "s");
-    heartSparks.appendChild(bit);
-  }
   heartPortal.classList.remove("go");
   void heartPortal.offsetWidth;
   heartPortal.classList.add("go");
 }
 
-async function goTo(destinationId, isFinalPath = false) {
+async function goTo(destinationId) {
   if (isTransitioning) return;
   const destination = document.getElementById(destinationId);
   if (!destination || destination === activeScreen) return;
@@ -135,23 +100,24 @@ async function goTo(destinationId, isFinalPath = false) {
 
   playHeartZoom();
   warp.boost(1);
-  activeScreen.classList.add("fly-out");
-  await wait(HEART_SWAP_MS);
-  activeScreen.classList.remove("fly-out");
+  await wait(HEART_SWAP_MS - 350);
+  activeScreen.classList.add("fade-out");
+  await wait(350);
+  activeScreen.classList.remove("fade-out");
   swapScreen(destination);
-  hideLoader();
-  destination.classList.add("fly-in");
+  destination.classList.add("fade-in");
   warp.boost(0);
+  await wait(HEART_TOTAL_MS - HEART_SWAP_MS);
   isTransitioning = false;
-  await wait(600);
-  destination.classList.remove("fly-in");
   heartPortal.classList.remove("go");
+  await wait(300);
+  destination.classList.remove("fade-in");
 }
 
 $$("[data-next]").forEach((button) => {
   button.addEventListener("click", () => {
     if (activeScreen.id === "welcome") tryPlayMusic();
-    goTo(button.dataset.next, button.dataset.final === "true");
+    goTo(button.dataset.next);
   });
 });
 
@@ -294,11 +260,11 @@ const warp = (() => {
   const ctx = cv.getContext("2d");
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const tints = ["255,255,255", "255,236,228", "255,190,175", "255,90,80", "200,220,255"];
-  const IDLE = 0.00022;
+  const IDLE = 0.00058;
   let W = 0, H = 0, speed = IDLE, target = IDLE, stars = [], dust = [], last = performance.now();
   const seed = (s, fresh) => {
     s.x = (Math.random() - .5) * 2.4; s.y = (Math.random() - .5) * 2.4;
-    s.z = fresh ? Math.random() : 1; s.t = tints[(Math.random() * tints.length) | 0]; s.r = .5 + Math.random() * 1.3; return s;
+    s.z = fresh ? Math.random() : 1; s.t = tints[(Math.random() * tints.length) | 0]; s.r = .6 + Math.random() * 1.5; s.g = Math.random() < .42; s.p = Math.random() * 6.283; return s;
   };
   function resize() {
     const d = Math.min(devicePixelRatio || 1, 2);
@@ -331,14 +297,23 @@ const warp = (() => {
         const [px, py] = project(s, Math.min(1.2, pz + speed * dt * 2.6));
         ctx.lineWidth = s.r * (1.1 - s.z * .5); ctx.lineCap = "round";
         ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(x, y); ctx.stroke();
-      } else { ctx.beginPath(); ctx.arc(x, y, s.r * (1.05 - s.z * .6), 0, 6.283); ctx.fill(); }
+      } else {
+        const r = s.r * (1.05 - s.z * .6) * 1.15;
+        ctx.beginPath(); ctx.arc(x, y, r, 0, 6.283); ctx.fill();
+        if (s.g) {
+          const tw = .5 + .5 * Math.sin(now / 240 + s.p), L = r * (3 + 7 * (1 - s.z)) * tw;
+          ctx.globalAlpha = tw * a; ctx.lineWidth = .9; ctx.lineCap = "round";
+          ctx.beginPath(); ctx.moveTo(x - L, y); ctx.lineTo(x + L, y); ctx.moveTo(x, y - L); ctx.lineTo(x, y + L); ctx.stroke();
+          ctx.globalAlpha = 1;
+        }
+      }
     });
     requestAnimationFrame(frame);
   }
   addEventListener("resize", resize);
   resize();
   requestAnimationFrame(frame);
-  return { boost: (v) => { target = reduce ? IDLE : IDLE + v * .03; } };
+  return { boost: (v) => { target = reduce ? IDLE : IDLE + v * .03; }, kick: (v) => { if (!reduce) speed = Math.min(.012, speed + v); } };
 })();
 
 /* ---------- foreground: shooting stars over the UI + heart/sparkle bursts ---------- */
@@ -348,7 +323,7 @@ const fx = (() => {
   document.body.appendChild(cv);
   const ctx = cv.getContext("2d");
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
-  let W = 0, H = 0, shooters = [], bits = [], next = 250, last = performance.now(), lastTrail = 0;
+  let W = 0, H = 0, shooters = [], bits = [], rings = [], holds = new Map(), lastEmit = 0, next = 500, last = performance.now(), lastTrail = 0;
   function resize() {
     const d = Math.min(devicePixelRatio || 1, 2);
     W = innerWidth; H = innerHeight; cv.width = W * d; cv.height = H * d; ctx.setTransform(d, 0, 0, d, 0, 0);
@@ -371,7 +346,7 @@ const fx = (() => {
     const dt = Math.min(50, now - last); last = now;
     ctx.clearRect(0, 0, W, H);
     next -= dt;
-    if (next < 0 && !reduce) { shoot(); if (Math.random() < .55) shoot(); if (Math.random() < .2) { shoot(); shoot(); } next = 600 + Math.random() * 1500; }
+    if (next < 0 && !reduce) { shoot(); if (Math.random() < .3) shoot(); next = 700 + Math.random() * 1900; }
     shooters = shooters.filter((s) => s.x > -400 && s.x < W + 400 && s.y < H + 300);
     shooters.forEach((s) => {
       s.x += s.vx * dt; s.y += s.vy * dt;
@@ -385,9 +360,39 @@ const fx = (() => {
       ctx.fillStyle = glow; ctx.beginPath(); ctx.arc(s.x, s.y, 12, 0, 6.283); ctx.fill();
       if (Math.random() < .35) bits.push({ x: s.x, y: s.y, vx: (Math.random() - .5) * .03, vy: Math.random() * .03, life: .8, dec: .0016, size: 1.5, heart: false, hue: s.hue });
     });
+    /* finger / mouse held down: glittering hearts under the thumb */
+    if (!reduce) holds.forEach((h) => {
+      if (now - lastEmit > 38) {
+        lastEmit = now;
+        for (let k = 0; k < 2; k += 1) bits.push({ x: h.x + (Math.random() - .5) * 46, y: h.y + 26 + Math.random() * 26, vx: (Math.random() - .5) * .03, vy: .02 + Math.random() * .06,
+          life: 1, dec: .0007 + Math.random() * .0006, size: 8 + Math.random() * 12, heart: true, glit: true, ph: Math.random() * 6.283, hue: Math.random() < .3 ? "255,235,228" : "255,95,120" });
+      }
+      const pulse = 1 + .12 * Math.sin(now / 130), hy = h.y + 46;
+      ctx.save(); ctx.translate(h.x, hy); ctx.scale(pulse, pulse);
+      ctx.shadowColor = "rgba(255,60,90,.95)"; ctx.shadowBlur = 22; ctx.fillStyle = "rgba(255,100,125,.92)";
+      ctx.font = "30px serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("♥", 0, 0);
+      ctx.restore();
+      const tw = .5 + .5 * Math.sin(now / 90), L = 9 + 12 * tw;
+      ctx.save(); ctx.strokeStyle = `rgba(255,255,255,${.5 + .5 * tw})`; ctx.lineWidth = 1.2; ctx.lineCap = "round";
+      ctx.beginPath(); ctx.moveTo(h.x - 14 - L, hy - 6); ctx.lineTo(h.x - 14 + L, hy - 6); ctx.moveTo(h.x - 14, hy - 6 - L); ctx.lineTo(h.x - 14, hy - 6 + L); ctx.stroke(); ctx.restore();
+    });
+    rings = rings.filter((r) => r.life > 0);
+    rings.forEach((r) => {
+      r.life -= .0022 * dt; const k = 1 - r.life;
+      ctx.strokeStyle = `rgba(255,255,255,${Math.max(0, r.life) * .55})`; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.arc(r.x, r.y, 10 + k * 90, 0, 6.283); ctx.stroke();
+    });
     bits = bits.filter((p) => p.life > 0);
     bits.forEach((p) => {
       p.x += p.vx * dt; p.y += p.vy * dt; p.vy += .00012 * dt; p.life -= p.dec * dt;
+      if (p.glit) {
+        const tw = .55 + .45 * Math.sin(now / 85 + p.ph);
+        ctx.globalAlpha = Math.max(0, p.life) * tw; ctx.fillStyle = `rgb(${p.hue})`;
+        ctx.shadowColor = `rgba(${p.hue},.95)`; ctx.shadowBlur = 14;
+        ctx.font = p.size + "px serif"; ctx.textAlign = "center"; ctx.fillText("♥", p.x, p.y);
+        ctx.shadowBlur = 0; ctx.fillRect(p.x - 1, p.y - p.size * .9, 2, 2);
+        return;
+      }
       ctx.globalAlpha = Math.max(0, p.life); ctx.fillStyle = `rgb(${p.hue})`;
       if (p.heart) { ctx.font = p.size + "px serif"; ctx.textAlign = "center"; ctx.fillText("♥", p.x, p.y); }
       else { ctx.beginPath(); ctx.arc(p.x, p.y, p.size * p.life + .4, 0, 6.283); ctx.fill(); }
@@ -396,12 +401,25 @@ const fx = (() => {
     requestAnimationFrame(frame);
   }
   addEventListener("resize", resize);
-  addEventListener("pointerdown", (e) => { if (!reduce) burst(e.clientX, e.clientY); }, { passive: true });
+  addEventListener("pointerdown", (e) => {
+    if (reduce) return;
+    burst(e.clientX, e.clientY); rings.push({ x: e.clientX, y: e.clientY, life: 1 });
+    if (e.pointerType === "mouse") holds.set("m", { x: e.clientX, y: e.clientY });
+  }, { passive: true });
+  addEventListener("pointerup", () => holds.delete("m"), { passive: true });
+  addEventListener("pointercancel", () => holds.delete("m"), { passive: true });
+  addEventListener("pointermove", (e) => { if (holds.has("m")) holds.set("m", { x: e.clientX, y: e.clientY }); }, { passive: true });
+  const syncTouches = (e) => {
+    holds.forEach((_, k) => { if (k !== "m") holds.delete(k); });
+    [...e.touches].forEach((t) => holds.set(t.identifier, { x: t.clientX, y: t.clientY }));
+  };
+  ["touchstart", "touchmove"].forEach((n) => addEventListener(n, syncTouches, { passive: true }));
+  ["touchend", "touchcancel"].forEach((n) => addEventListener(n, syncTouches, { passive: true }));
+  addEventListener("blur", () => holds.clear());
   addEventListener("pointermove", (e) => {
     if (reduce || e.pointerType !== "mouse" || e.timeStamp - lastTrail < 45) return;
     lastTrail = e.timeStamp; burst(e.clientX, e.clientY, 1);
   }, { passive: true });
-  window.__burst = burst;
   resize();
   requestAnimationFrame(frame);
 })();
@@ -441,9 +459,13 @@ function buildScrollFx() {
   const bar = document.createElement("div");
   bar.className = "scroll-progress";
   document.body.appendChild(bar);
+  let lastY = scrollY;
   const update = () => {
     const max = document.documentElement.scrollHeight - innerHeight;
     bar.style.transform = "scaleX(" + (max > 0 ? Math.min(1, scrollY / max) : 0) + ")";
+    const d = Math.abs(scrollY - lastY); lastY = scrollY;
+    if (d) warp.kick(Math.min(.006, d * .00005));
+    document.documentElement.style.setProperty("--sy", scrollY);
   };
   addEventListener("scroll", update, { passive: true });
   addEventListener("resize", update);
@@ -489,29 +511,8 @@ buildSpace();
 buildHearts();
 buildMemoryStack();
 buildScrollFx();
-addReveal($$(".memory, .envelope, .secret-wrap, .final-note, .postcard"));
+addReveal($$(".memory, .envelope, .secret-wrap, .final-note, .postcard, .letter-body p, .stage-lead, .wish-line, .restart-button"));
 createFloatingWorld();
 setMusicLabel(false);
 tryPlayMusic();
 document.addEventListener("pointerdown", tryPlayMusic, { once: true, passive: true });
-
-/* ---------- v3: fireworks, candle confetti, 3D glass tilt ---------- */
-function fireworks() {
-  if (!window.__burst || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-  for (let i = 0; i < 7; i += 1) window.setTimeout(() => window.__burst(innerWidth * (.15 + Math.random() * .7), innerHeight * (.15 + Math.random() * .4), 34), i * 380);
-}
-$$(".candle").forEach((c) => c.addEventListener("click", () => {
-  const r = c.getBoundingClientRect();
-  if (window.__burst) window.__burst(r.left + r.width / 2, r.top, 26);
-}));
-document.addEventListener("pointermove", (e) => {
-  if (e.pointerType !== "mouse") return;
-  const t = e.target.closest && e.target.closest(".photo-frame, .postcard, .envelope, .primary-button");
-  $$(".tilt").forEach((n) => { if (n !== t) { n.classList.remove("tilt"); n.style.transform = ""; } });
-  if (!t) return;
-  const r = t.getBoundingClientRect(), px = (e.clientX - r.left) / r.width - .5, py = (e.clientY - r.top) / r.height - .5;
-  t.classList.add("tilt");
-  t.style.transform = `perspective(800px) rotateX(${(-py * 7).toFixed(2)}deg) rotateY(${(px * 9).toFixed(2)}deg) translateY(-3px)`;
-  t.style.setProperty("--gx", (px + .5) * 100 + "%"); t.style.setProperty("--gy", (py + .5) * 100 + "%");
-}, { passive: true });
-
