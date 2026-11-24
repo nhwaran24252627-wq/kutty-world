@@ -1252,27 +1252,32 @@ h2 em, h1 .title-name { font-family: var(--script); font-weight: 700; color: tra
 .scroll-hint { display: block; margin: 1.6rem auto 0; color: #fff; font-family: var(--script); font-size: 1.4rem; text-align: center; animation: hint-bob 1.8s ease-in-out infinite; text-shadow: 0 0 1rem rgba(255,50,70,.8); }
 @keyframes hint-bob { 50% { transform: translateY(8px); } }
 
-/* ===== v3: BLUE GLASS HEART ZOOM TRANSITION ===== */
+/* ===== v3: BLUE GLASS HEART ZOOM TRANSITION (4s) ===== */
 .hp { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; pointer-events: none; visibility: hidden; overflow: hidden; }
 .hp.go { visibility: visible; }
-.hp-zoom { position: relative; display: grid; place-items: center; width: min(78vmin, 520px); aspect-ratio: 100 / 90; opacity: 0; transform-origin: 50% 40%; will-change: transform, opacity; }
-.hp.go .hp-zoom { animation: hp-zoom 1.5s both; }
+.hp > * { grid-area: 1 / 1; }
+.hp-zoom { position: relative; width: min(78vmin, 520px); aspect-ratio: 100 / 90; opacity: 0; transform-origin: 50% 40%; will-change: transform, opacity; }
+.hp.go .hp-zoom { animation: hp-zoom 4s both; }
 .hp-heart { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 .hp-heart path { fill: rgba(120, 190, 255, .05); stroke-linejoin: round; vector-effect: non-scaling-stroke; }
 .hp-glow { stroke: rgba(70, 150, 255, .4); stroke-width: 12px; filter: blur(7px); }
 .hp-rim { stroke: rgba(130, 205, 255, .98); stroke-width: 2px; filter: drop-shadow(0 0 6px rgba(80, 170, 255, .9)); }
-.hp-text { position: relative; margin: -4% 0 0; padding: 0; width: 70%; color: #fff; text-align: center; font-family: var(--lovable); font-size: clamp(1.5rem, 8.2vmin, 3.2rem); line-height: 1.2;
+/* text is outside the zoom wrapper: always the same size */
+.hp-text { position: relative; margin: -2vmin 0 0; padding: 0; color: #fff; text-align: center; opacity: 0; font-family: var(--lovable); font-size: clamp(1.5rem, 8.2vmin, 3.2rem); line-height: 1.2;
   text-shadow: 0 0 .5rem rgba(110, 190, 255, .95), 0 0 1.6rem rgba(60, 140, 255, .75), 0 .12rem .8rem rgba(0, 0, 0, .6); }
-.hp.go .hp-text { animation: hp-text 1.5s both; }
+.hp.go .hp-text { animation: hp-text 4s both; }
 @keyframes hp-zoom {
   0%   { opacity: 0; transform: scale(.2); animation-timing-function: cubic-bezier(.2, 1.3, .4, 1); }
-  22%  { opacity: 1; transform: scale(1); }
-  32%  { transform: scale(.95); }
-  42%  { transform: scale(1.04); animation-timing-function: cubic-bezier(.65, 0, .9, .4); }
-  90%  { opacity: 1; }
+  10%  { opacity: 1; transform: scale(1); }
+  18%  { transform: scale(.95); }
+  26%  { transform: scale(1.04); }
+  34%  { transform: scale(.97); }
+  42%  { transform: scale(1.03); }
+  50%  { transform: scale(1); animation-timing-function: cubic-bezier(.6, 0, .9, .4); }
+  92%  { opacity: 1; }
   100% { opacity: 0; transform: scale(20); }
 }
-@keyframes hp-text { 0%, 12% { opacity: 0; } 24% { opacity: 1; } 62% { opacity: 1; } 78%, 100% { opacity: 0; } }
+@keyframes hp-text { 0%, 6% { opacity: 0; } 14% { opacity: 1; } 54% { opacity: 1; } 66%, 100% { opacity: 0; } }
 .fade-out { animation: scr-out .35s ease both; pointer-events: none; }
 .fade-in { animation: scr-in .5s ease both; }
 @keyframes scr-out { to { opacity: 0; } }
@@ -1284,8 +1289,6 @@ body { overflow-y: auto; }
 #warp { position: fixed; inset: 0; z-index: -1; width: 100%; height: 100%; pointer-events: none; }
 #fx { z-index: 50; }
 .media-placeholder { display: none !important; }
-.sp-mars, .sp-giant { translate: 0 calc(var(--sy, 0) * -.035px); }
-.sp-moon { translate: 0 calc(var(--sy, 0) * .02px); }
 
 /* ===== v3: iPhone-style liquid glass, ~90% transparent ===== */
 :root {
@@ -1318,3 +1321,62 @@ body { overflow-y: auto; }
 .envelope:active, .postcard:active, .primary-button:active, .restart-button:active, .heart-path:active { transform: scale(.96); transition: transform .12s ease; }
 .photo-frame:active, .memory-step .photo-frame:active { transform: scale(1.02); transition: transform .25s ease; }
 @media (prefers-reduced-motion: reduce) { .hp.go .hp-zoom, .hp.go .hp-text { animation-duration: .01s; } }
+
+/* ===== v4: dark theme with stars + real postcard ===== */
+:root {
+  --lg-bg: linear-gradient(135deg, rgba(255,255,255,.07), rgba(255,255,255,.01) 45%, rgba(255,255,255,.03)), rgba(4,6,16,.42);
+}
+.stage-inner { background: linear-gradient(135deg, rgba(255,255,255,.06), rgba(255,255,255,.01) 45%, rgba(255,255,255,.025)), rgba(3,4,12,.5) !important; }
+.envelope.open, .request-envelope.open { background: linear-gradient(135deg, rgba(255,255,255,.08), rgba(255,255,255,.02)), rgba(4,6,16,.5) !important; }
+.primary-button { background: linear-gradient(135deg, rgba(255,255,255,.14), rgba(255,255,255,.04)), rgba(4,6,16,.4) !important; }
+body, .ambient { background: #000 !important; }
+
+.postcard {
+  position: relative; display: block; width: min(100%, 560px); aspect-ratio: 3 / 2; min-height: 14rem; margin: 1.6rem auto; padding: 0; text-align: left; cursor: pointer;
+  color: #2a1d17 !important; border: 0 !important; border-radius: .35rem;
+  background: repeating-linear-gradient(135deg, #c8352f 0 14px, #fdf6e8 14px 24px, #2e5aa8 24px 38px, #fdf6e8 38px 48px) !important;
+  -webkit-backdrop-filter: none; backdrop-filter: none;
+  box-shadow: 0 1.4rem 3rem rgba(0,0,0,.7), 0 0 2rem rgba(255,255,255,.06) !important;
+  transform: rotate(-1.6deg); transition: transform .35s ease;
+}
+.postcard::after { content: ""; position: absolute; inset: 9px; border-radius: .2rem; z-index: 0;
+  background: radial-gradient(120% 90% at 20% 0%, rgba(255,255,255,.55), transparent 60%), #f6ecd6; box-shadow: inset 0 0 2.2rem rgba(150,100,50,.22); }
+.postcard::before { content: ""; position: absolute; z-index: 1; top: 8%; bottom: 8%; left: 55%; border-left: 2px solid rgba(60,40,30,.45); }
+.postcard * { color: #2a1d17 !important; text-shadow: none !important; }
+.postcard > * { position: absolute; z-index: 2; }
+.postcard:hover { transform: rotate(0) translateY(-.3rem); }
+.postcard:active { transform: rotate(0) scale(.98); }
+.postcard-stripe { display: none; }
+.postcard-label { top: 8%; left: 5.5%; font-family: Georgia, serif; font-size: .8rem; font-weight: 700; letter-spacing: .35em; opacity: .7; }
+.postcard-hello { display: block; font-family: var(--script); font-size: clamp(1.5rem, 5vw, 2rem); font-weight: 700; color: #7a1d22 !important; }
+.postcard-left { top: 22%; left: 5.5%; width: 44%; }
+.postcard-prompt { display: block; margin-top: .6rem; font-family: var(--script); font-size: clamp(1.05rem, 3.6vw, 1.35rem); line-height: 1.3; color: #3a2a22 !important; position: static; letter-spacing: 0; font-weight: 600; }
+.postcard-stamp { top: 9%; right: 6%; width: 4.2rem; height: 5rem; display: grid; place-items: center; font-size: 1.9rem; transform: none;
+  background: #f9eacb; border: 3px dotted #b04a3a; outline: 4px solid #f9eacb; outline-offset: -1px; box-shadow: 0 0 0 1px rgba(0,0,0,.15); }
+.postcard-mark { top: 11%; right: 21%; width: 4.6rem; height: 4.6rem; display: grid; place-items: center; text-align: center; border: 2px solid rgba(120,30,30,.55); border-radius: 50%;
+  font-family: Georgia, serif; font-size: .5rem; font-weight: 700; letter-spacing: .08em; line-height: 1.5; transform: rotate(-14deg); opacity: .75; }
+.postcard-address { left: 60%; right: 6%; bottom: 12%; padding: 0; }
+.postcard-line { display: block; min-height: 1.9rem; border-bottom: 1.5px solid rgba(60,40,30,.55); font-family: var(--script); font-size: clamp(1.05rem, 3.6vw, 1.3rem); font-weight: 700; line-height: 1.8rem; }
+@media (max-width: 480px) { .postcard { min-height: 13rem; } .postcard-mark { width: 3.6rem; height: 3.6rem; right: 24%; } .postcard-stamp { width: 3.3rem; height: 4rem; } }
+
+/* ===== v5: dark theme, glass 95% transparent (stars show through) ===== */
+:root {
+  --lg-bg: linear-gradient(135deg, rgba(255,255,255,.05), rgba(255,255,255,.008) 45%, rgba(255,255,255,.02));
+  --lg-blur: blur(5px) saturate(160%);
+  --lg-edge: inset 0 1px 0 rgba(255,255,255,.4), inset 0 -1px 0 rgba(255,255,255,.08), inset 0 0 1.6rem rgba(255,255,255,.025);
+}
+.stage-inner, .letter-gate, .letter, .envelope, .envelope.open, .promise-envelope, .request-envelope, .request-envelope.open,
+.final-note, .sound-button, .volume-control, .restart-button, .secret-memory p, .primary-button, .photo-frame, .video-frame,
+.memory-step .photo-frame, .memory-step .video-frame, .wish-message {
+  background: var(--lg-bg) !important;
+  -webkit-backdrop-filter: var(--lg-blur); backdrop-filter: var(--lg-blur);
+  border: 1px solid rgba(255,255,255,.2) !important;
+  box-shadow: var(--lg-edge), 0 1rem 2.4rem rgba(0,0,0,.3) !important;
+}
+.stage-inner { background: linear-gradient(135deg, rgba(255,255,255,.045), rgba(255,255,255,.008) 45%, rgba(255,255,255,.02)) !important; }
+.envelope.open, .request-envelope.open { background: linear-gradient(135deg, rgba(255,255,255,.06), rgba(255,255,255,.015)) !important; }
+.primary-button { background: linear-gradient(135deg, rgba(255,255,255,.08), rgba(255,255,255,.02)) !important; }
+.letter { background: linear-gradient(135deg, rgba(255,255,255,.04), rgba(255,255,255,.01)) !important; }
+.letter-gate input { background: rgba(255,255,255,.06) !important; }
+.stage-inner p, .stage-inner h1, .stage-inner h2, .stage-inner small, .letter-body, .envelope-title, .envelope-letter, .final-note p, .wish-message {
+  text-shadow: 0 1px 3px rgba(0,0,0,.9), 0 0 1rem rgba(0,0,0,.85); }
