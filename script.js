@@ -72,8 +72,8 @@ function startOpeningLines() {
 const heartPortal = $("#heartPortal");
 const wait = (ms) => new Promise((r) => window.setTimeout(r, ms));
 const stageOrder = ["welcome", "stage1", "stage2", "stage3", "stage4", "stage5", "stage6"];
-const HEART_SWAP_MS = 1050;
-const HEART_TOTAL_MS = 1500;
+const HEART_SWAP_MS = 3300;
+const HEART_TOTAL_MS = 4000;
 
 function swapScreen(destination) {
   activeScreen.hidden = true;
@@ -99,14 +99,12 @@ async function goTo(destinationId) {
   isTransitioning = true;
 
   playHeartZoom();
-  warp.boost(1);
   await wait(HEART_SWAP_MS - 350);
   activeScreen.classList.add("fade-out");
   await wait(350);
   activeScreen.classList.remove("fade-out");
   swapScreen(destination);
   destination.classList.add("fade-in");
-  warp.boost(0);
   await wait(HEART_TOTAL_MS - HEART_SWAP_MS);
   isTransitioning = false;
   heartPortal.classList.remove("go");
@@ -260,7 +258,7 @@ const warp = (() => {
   const ctx = cv.getContext("2d");
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const tints = ["255,255,255", "255,236,228", "255,190,175", "255,90,80", "200,220,255"];
-  const IDLE = 0.00058;
+  const IDLE = 0.00012;
   let W = 0, H = 0, speed = IDLE, target = IDLE, stars = [], dust = [], last = performance.now();
   const seed = (s, fresh) => {
     s.x = (Math.random() - .5) * 2.4; s.y = (Math.random() - .5) * 2.4;
@@ -323,13 +321,13 @@ const fx = (() => {
   document.body.appendChild(cv);
   const ctx = cv.getContext("2d");
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
-  let W = 0, H = 0, shooters = [], bits = [], rings = [], holds = new Map(), lastEmit = 0, next = 500, last = performance.now(), lastTrail = 0;
+  let W = 0, H = 0, shooters = [], bits = [], rings = [], holds = new Map(), lastEmit = 0, next = 1500, last = performance.now(), lastTrail = 0;
   function resize() {
     const d = Math.min(devicePixelRatio || 1, 2);
     W = innerWidth; H = innerHeight; cv.width = W * d; cv.height = H * d; ctx.setTransform(d, 0, 0, d, 0, 0);
   }
   function shoot() {
-    const rightward = Math.random() < .4, a = .38 + Math.random() * .42, sp = 1 + Math.random() * 1.1;
+    const rightward = Math.random() < .4, a = .38 + Math.random() * .42, sp = .38 + Math.random() * .22;
     shooters.push({
       x: rightward ? Math.random() * W * .6 : W * (.3 + Math.random() * .8), y: -30 - Math.random() * 60,
       vx: (rightward ? 1 : -1) * Math.cos(a) * sp, vy: Math.sin(a) * sp,
@@ -346,7 +344,7 @@ const fx = (() => {
     const dt = Math.min(50, now - last); last = now;
     ctx.clearRect(0, 0, W, H);
     next -= dt;
-    if (next < 0 && !reduce) { shoot(); if (Math.random() < .3) shoot(); next = 700 + Math.random() * 1900; }
+    if (next < 0 && !reduce) { shoot(); if (Math.random() < .3) shoot(); next = 2200 + Math.random() * 3800; }
     shooters = shooters.filter((s) => s.x > -400 && s.x < W + 400 && s.y < H + 300);
     shooters.forEach((s) => {
       s.x += s.vx * dt; s.y += s.vy * dt;
@@ -459,13 +457,9 @@ function buildScrollFx() {
   const bar = document.createElement("div");
   bar.className = "scroll-progress";
   document.body.appendChild(bar);
-  let lastY = scrollY;
   const update = () => {
     const max = document.documentElement.scrollHeight - innerHeight;
     bar.style.transform = "scaleX(" + (max > 0 ? Math.min(1, scrollY / max) : 0) + ")";
-    const d = Math.abs(scrollY - lastY); lastY = scrollY;
-    if (d) warp.kick(Math.min(.006, d * .00005));
-    document.documentElement.style.setProperty("--sy", scrollY);
   };
   addEventListener("scroll", update, { passive: true });
   addEventListener("resize", update);
