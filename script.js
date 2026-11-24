@@ -87,15 +87,15 @@ function startOpeningLines() {
   const lines = $$(".opening-lines p");
   lines.forEach((line) => line.classList.remove("visible"));
   lines.forEach((line, index) => {
-    window.setTimeout(() => line.classList.add("visible"), index * 1000);
+    window.setTimeout(() => line.classList.add("visible"), index * 130);
   });
 }
 
-const zoom = $("#heartZoom");
-const zoomHeart = $("svg", zoom);
-const zoomText = $(".hz-text", zoom);
+const heartPortal = $("#heartPortal");
+const heartSparks = $(".hp-sparks", heartPortal);
 const wait = (ms) => new Promise((r) => window.setTimeout(r, ms));
 const stageOrder = ["welcome", "stage1", "stage2", "stage3", "stage4", "stage5", "stage6"];
+const HEART_SWAP_MS = 640;
 
 function swapScreen(destination) {
   activeScreen.hidden = true;
@@ -105,38 +105,26 @@ function swapScreen(destination) {
   document.body.style.setProperty("--step", Math.max(0, stageOrder.indexOf(destination.id)));
   window.scrollTo(0, 0);
   if (destination.id === "stage1") startOpeningLines();
+  if (destination.id === "stage6") window.setTimeout(fireworks, 500);
 }
 
-/* heart pops in with the text, beats, then we zoom inside it and come out on the next page */
-async function heartTransition(destination) {
-  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const full = Math.max(innerWidth, innerHeight) / 144 * 4.2;
-  zoom.classList.add("on");
-  zoomHeart.style.transform = "scale(0)";
-  zoomText.style.opacity = "0";
-  const ease = "cubic-bezier(.2,.8,.2,1)";
-
-  await zoomHeart.animate([{ transform: "scale(0)" }, { transform: "scale(1.15)" }, { transform: "scale(1)" }],
-    { duration: reduce ? 1 : 650, easing: ease, fill: "forwards" }).finished;
-  zoomText.animate([{ opacity: 0, transform: "translateY(10px)" }, { opacity: 1, transform: "none" }],
-    { duration: 450, easing: "ease-out", fill: "forwards" });
-  await zoomHeart.animate([{ transform: "scale(1)" }, { transform: "scale(1.14)" }, { transform: "scale(1)" }, { transform: "scale(1.1)" }, { transform: "scale(1)" }],
-    { duration: reduce ? 1 : 1000, easing: "ease-in-out", fill: "forwards" }).finished;
-
-  zoomText.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 380, fill: "forwards" });
-  await zoomHeart.animate([{ transform: "scale(1)" }, { transform: "scale(" + full + ")" }],
-    { duration: reduce ? 1 : 950, easing: "cubic-bezier(.65,0,.9,.4)", fill: "forwards" }).finished;
-
-  swapScreen(destination);
-  zoom.style.background = "#c00f26";
-  zoomHeart.style.display = "none";
-  await zoom.animate([{ opacity: 1 }, { opacity: 0 }], { duration: reduce ? 1 : 700, easing: "ease-out", fill: "forwards" }).finished;
-  zoom.getAnimations().forEach((x) => x.cancel());
-  zoomHeart.getAnimations().forEach((x) => x.cancel());
-  zoomText.getAnimations().forEach((x) => x.cancel());
-  zoomHeart.style.display = "";
-  zoom.style.background = "";
-  zoom.classList.remove("on");
+/* transparent glass heart pops in with the text, beats, then the camera flies inside it */
+function playHeartZoom() {
+  heartSparks.replaceChildren();
+  for (let i = 0; i < 18; i += 1) {
+    const bit = document.createElement("span");
+    const angle = (i / 18) * Math.PI * 2 + Math.random() * .4;
+    const dist = 140 + Math.random() * Math.max(innerWidth, innerHeight) * .5;
+    bit.textContent = i % 3 === 0 ? "✦" : "♥";
+    bit.style.setProperty("--dx", Math.cos(angle) * dist + "px");
+    bit.style.setProperty("--dy", Math.sin(angle) * dist + "px");
+    bit.style.setProperty("--s", (.7 + Math.random() * 1.3) + "rem");
+    bit.style.setProperty("--d", (.28 + Math.random() * .3) + "s");
+    heartSparks.appendChild(bit);
+  }
+  heartPortal.classList.remove("go");
+  void heartPortal.offsetWidth;
+  heartPortal.classList.add("go");
 }
 
 async function goTo(destinationId, isFinalPath = false) {
@@ -145,18 +133,19 @@ async function goTo(destinationId, isFinalPath = false) {
   if (!destination || destination === activeScreen) return;
   isTransitioning = true;
 
-  if (isFinalPath) {
-    await showLoader(
-      ["Nan irukan unnaku for our friendship❄️", "love you as always by your மகன் 🫀", "nan pesunathu hurt panna sorry mannichidu 😓", "Thanks for each and everything yuva❄️"],
-      13000, true, "final"
-    );
-    swapScreen(destination);
-    hideLoader();
-    destination.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 600, easing: "ease-out" });
-  } else {
-    await heartTransition(destination);
-  }
+  playHeartZoom();
+  warp.boost(1);
+  activeScreen.classList.add("fly-out");
+  await wait(HEART_SWAP_MS);
+  activeScreen.classList.remove("fly-out");
+  swapScreen(destination);
+  hideLoader();
+  destination.classList.add("fly-in");
+  warp.boost(0);
   isTransitioning = false;
+  await wait(600);
+  destination.classList.remove("fly-in");
+  heartPortal.classList.remove("go");
 }
 
 $$("[data-next]").forEach((button) => {
@@ -297,7 +286,185 @@ function buildSpace() {
   });
 }
 
-/* ---------- final page: memories one below another (plain scroll, no captions) ---------- */
+/* ---------- background: depth starfield that stretches into streaks during page travel ---------- */
+const warp = (() => {
+  const cv = document.createElement("canvas");
+  cv.id = "warp";
+  $(".ambient").after(cv);
+  const ctx = cv.getContext("2d");
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const tints = ["255,255,255", "255,236,228", "255,190,175", "255,90,80", "200,220,255"];
+  const IDLE = 0.00022;
+  let W = 0, H = 0, speed = IDLE, target = IDLE, stars = [], dust = [], last = performance.now();
+  const seed = (s, fresh) => {
+    s.x = (Math.random() - .5) * 2.4; s.y = (Math.random() - .5) * 2.4;
+    s.z = fresh ? Math.random() : 1; s.t = tints[(Math.random() * tints.length) | 0]; s.r = .5 + Math.random() * 1.3; return s;
+  };
+  function resize() {
+    const d = Math.min(devicePixelRatio || 1, 2);
+    W = innerWidth; H = innerHeight; cv.width = W * d; cv.height = H * d; ctx.setTransform(d, 0, 0, d, 0, 0);
+    stars = Array.from({ length: Math.round(Math.min(380, W * H / 3400)) }, () => seed({}, true));
+    dust = Array.from({ length: 12 }, () => ({ x: Math.random() * W, y: Math.random() * H, r: 60 + Math.random() * 140, vx: (Math.random() - .5) * .08, vy: (Math.random() - .5) * .05, a: .02 + Math.random() * .05 }));
+  }
+  const project = (s, z) => [W / 2 + s.x / z * W * .22, H / 2 + s.y / z * W * .22];
+  function frame(now) {
+    const dt = Math.min(50, now - last); last = now;
+    speed += (target - speed) * .07;
+    ctx.clearRect(0, 0, W, H);
+    dust.forEach((p) => {
+      p.x += p.vx; p.y += p.vy;
+      if (p.x < -200) p.x = W + 200; if (p.x > W + 200) p.x = -200;
+      if (p.y < -200) p.y = H + 200; if (p.y > H + 200) p.y = -200;
+      const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r);
+      g.addColorStop(0, `rgba(190,14,32,${p.a})`); g.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = g; ctx.fillRect(p.x - p.r, p.y - p.r, p.r * 2, p.r * 2);
+    });
+    const fast = speed > .004;
+    stars.forEach((s) => {
+      const pz = s.z; s.z -= speed * dt;
+      if (s.z <= .03) { seed(s, false); return; }
+      const [x, y] = project(s, s.z);
+      if (fast && (x < -50 || x > W + 50 || y < -50 || y > H + 50)) seed(s, false);
+      const a = Math.min(1, (1 - s.z) * 1.6 + .25);
+      ctx.strokeStyle = `rgba(${s.t},${a})`; ctx.fillStyle = ctx.strokeStyle;
+      if (fast) {
+        const [px, py] = project(s, Math.min(1.2, pz + speed * dt * 2.6));
+        ctx.lineWidth = s.r * (1.1 - s.z * .5); ctx.lineCap = "round";
+        ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(x, y); ctx.stroke();
+      } else { ctx.beginPath(); ctx.arc(x, y, s.r * (1.05 - s.z * .6), 0, 6.283); ctx.fill(); }
+    });
+    requestAnimationFrame(frame);
+  }
+  addEventListener("resize", resize);
+  resize();
+  requestAnimationFrame(frame);
+  return { boost: (v) => { target = reduce ? IDLE : IDLE + v * .03; } };
+})();
+
+/* ---------- foreground: shooting stars over the UI + heart/sparkle bursts ---------- */
+const fx = (() => {
+  const cv = document.createElement("canvas");
+  cv.id = "fx";
+  document.body.appendChild(cv);
+  const ctx = cv.getContext("2d");
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let W = 0, H = 0, shooters = [], bits = [], next = 250, last = performance.now(), lastTrail = 0;
+  function resize() {
+    const d = Math.min(devicePixelRatio || 1, 2);
+    W = innerWidth; H = innerHeight; cv.width = W * d; cv.height = H * d; ctx.setTransform(d, 0, 0, d, 0, 0);
+  }
+  function shoot() {
+    const rightward = Math.random() < .4, a = .38 + Math.random() * .42, sp = 1 + Math.random() * 1.1;
+    shooters.push({
+      x: rightward ? Math.random() * W * .6 : W * (.3 + Math.random() * .8), y: -30 - Math.random() * 60,
+      vx: (rightward ? 1 : -1) * Math.cos(a) * sp, vy: Math.sin(a) * sp,
+      len: 170 + Math.random() * 190, w: 1.4 + Math.random() * 1.6, hue: Math.random() < .55 ? "255,70,80" : "255,225,215"
+    });
+  }
+  function burst(x, y, n = 11) {
+    for (let i = 0; i < n; i += 1) {
+      const ang = Math.random() * 6.283, v = .06 + Math.random() * .22, heart = i % 2 === 0;
+      bits.push({ x, y, vx: Math.cos(ang) * v, vy: Math.sin(ang) * v - .08, life: 1, dec: .0006 + Math.random() * .0007, size: heart ? 9 + Math.random() * 13 : 2 + Math.random() * 2.5, heart, hue: heart ? "255,80,100" : "255,235,228" });
+    }
+  }
+  function frame(now) {
+    const dt = Math.min(50, now - last); last = now;
+    ctx.clearRect(0, 0, W, H);
+    next -= dt;
+    if (next < 0 && !reduce) { shoot(); if (Math.random() < .55) shoot(); if (Math.random() < .2) { shoot(); shoot(); } next = 600 + Math.random() * 1500; }
+    shooters = shooters.filter((s) => s.x > -400 && s.x < W + 400 && s.y < H + 300);
+    shooters.forEach((s) => {
+      s.x += s.vx * dt; s.y += s.vy * dt;
+      const m = Math.hypot(s.vx, s.vy), tx = s.x - (s.vx / m) * s.len, ty = s.y - (s.vy / m) * s.len;
+      const g = ctx.createLinearGradient(s.x, s.y, tx, ty);
+      g.addColorStop(0, "rgba(255,255,255,.95)"); g.addColorStop(.2, `rgba(${s.hue},.6)`); g.addColorStop(1, "rgba(160,0,20,0)");
+      ctx.strokeStyle = g; ctx.lineWidth = s.w; ctx.lineCap = "round";
+      ctx.beginPath(); ctx.moveTo(s.x, s.y); ctx.lineTo(tx, ty); ctx.stroke();
+      const glow = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, 12);
+      glow.addColorStop(0, "rgba(255,255,255,.95)"); glow.addColorStop(.35, `rgba(${s.hue},.45)`); glow.addColorStop(1, "rgba(255,40,60,0)");
+      ctx.fillStyle = glow; ctx.beginPath(); ctx.arc(s.x, s.y, 12, 0, 6.283); ctx.fill();
+      if (Math.random() < .35) bits.push({ x: s.x, y: s.y, vx: (Math.random() - .5) * .03, vy: Math.random() * .03, life: .8, dec: .0016, size: 1.5, heart: false, hue: s.hue });
+    });
+    bits = bits.filter((p) => p.life > 0);
+    bits.forEach((p) => {
+      p.x += p.vx * dt; p.y += p.vy * dt; p.vy += .00012 * dt; p.life -= p.dec * dt;
+      ctx.globalAlpha = Math.max(0, p.life); ctx.fillStyle = `rgb(${p.hue})`;
+      if (p.heart) { ctx.font = p.size + "px serif"; ctx.textAlign = "center"; ctx.fillText("♥", p.x, p.y); }
+      else { ctx.beginPath(); ctx.arc(p.x, p.y, p.size * p.life + .4, 0, 6.283); ctx.fill(); }
+    });
+    ctx.globalAlpha = 1;
+    requestAnimationFrame(frame);
+  }
+  addEventListener("resize", resize);
+  addEventListener("pointerdown", (e) => { if (!reduce) burst(e.clientX, e.clientY); }, { passive: true });
+  addEventListener("pointermove", (e) => {
+    if (reduce || e.pointerType !== "mouse" || e.timeStamp - lastTrail < 45) return;
+    lastTrail = e.timeStamp; burst(e.clientX, e.clientY, 1);
+  }, { passive: true });
+  window.__burst = burst;
+  resize();
+  requestAnimationFrame(frame);
+})();
+
+/* ---------- soft hearts rising behind the glass ---------- */
+function buildHearts() {
+  const layer = document.createElement("div");
+  layer.className = "hearts-layer";
+  const colors = ["#ff3b5c", "#ff6b7d", "#d1122d", "#ffd1c9"];
+  for (let i = 0; i < 20; i += 1) {
+    const h = document.createElement("span"), far = i % 3 === 0;
+    h.textContent = "♥";
+    h.style.setProperty("--x", (Math.random() * 100) + "%");
+    h.style.setProperty("--s", (far ? .7 + Math.random() * .6 : 1.2 + Math.random() * 2.2) + "rem");
+    h.style.setProperty("--c", colors[i % colors.length]);
+    h.style.setProperty("--o", (far ? .25 : .45 + Math.random() * .3).toFixed(2));
+    h.style.setProperty("--b", far ? "1.5px" : "0px");
+    h.style.setProperty("--t", (16 + Math.random() * 16) + "s");
+    h.style.setProperty("--d", (-Math.random() * 30) + "s");
+    h.style.setProperty("--sx", (-60 + Math.random() * 120) + "px");
+    layer.appendChild(h);
+  }
+  $("#warp").after(layer);
+}
+
+/* ---------- scroll reveal, progress bar, glass highlight ---------- */
+const revealIO = "IntersectionObserver" in window ? new IntersectionObserver((entries) => entries.forEach((e) => {
+  if (e.isIntersecting) { e.target.classList.add("seen"); revealIO.unobserve(e.target); }
+}), { threshold: .1, rootMargin: "0px 0px -5% 0px" }) : null;
+
+function addReveal(elements) {
+  if (!revealIO) return;
+  elements.forEach((el) => { el.classList.add("reveal"); revealIO.observe(el); });
+}
+
+function buildScrollFx() {
+  const bar = document.createElement("div");
+  bar.className = "scroll-progress";
+  document.body.appendChild(bar);
+  const update = () => {
+    const max = document.documentElement.scrollHeight - innerHeight;
+    bar.style.transform = "scaleX(" + (max > 0 ? Math.min(1, scrollY / max) : 0) + ")";
+  };
+  addEventListener("scroll", update, { passive: true });
+  addEventListener("resize", update);
+  update();
+  let ticking = false;
+  document.addEventListener("pointermove", (e) => {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(() => {
+      const card = activeScreen.querySelector(".stage-inner");
+      if (card) {
+        const r = card.getBoundingClientRect();
+        card.style.setProperty("--mx", Math.max(0, Math.min(100, (e.clientX - r.left) / r.width * 100)) + "%");
+        card.style.setProperty("--my", Math.max(0, Math.min(100, (e.clientY - r.top) / r.height * 100)) + "%");
+      }
+      ticking = false;
+    });
+  }, { passive: true });
+}
+
+/* ---------- final page: photos one below another, no names, plain scroll ---------- */
 function buildMemoryStack() {
   const holder = $(".final-media");
   if (!holder) return;
@@ -311,11 +478,40 @@ function buildMemoryStack() {
       new MutationObserver(() => { step.hidden = item.hidden; }).observe(item, { attributes: true, attributeFilter: ["hidden"] });
     }
   });
+  const hint = document.createElement("span");
+  hint.className = "scroll-hint";
+  hint.textContent = "scroll pannu ↓";
+  holder.before(hint);
+  addReveal($$(".memory-step", holder));
 }
 
 buildSpace();
+buildHearts();
 buildMemoryStack();
+buildScrollFx();
+addReveal($$(".memory, .envelope, .secret-wrap, .final-note, .postcard"));
 createFloatingWorld();
 setMusicLabel(false);
 tryPlayMusic();
 document.addEventListener("pointerdown", tryPlayMusic, { once: true, passive: true });
+
+/* ---------- v3: fireworks, candle confetti, 3D glass tilt ---------- */
+function fireworks() {
+  if (!window.__burst || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  for (let i = 0; i < 7; i += 1) window.setTimeout(() => window.__burst(innerWidth * (.15 + Math.random() * .7), innerHeight * (.15 + Math.random() * .4), 34), i * 380);
+}
+$$(".candle").forEach((c) => c.addEventListener("click", () => {
+  const r = c.getBoundingClientRect();
+  if (window.__burst) window.__burst(r.left + r.width / 2, r.top, 26);
+}));
+document.addEventListener("pointermove", (e) => {
+  if (e.pointerType !== "mouse") return;
+  const t = e.target.closest && e.target.closest(".photo-frame, .postcard, .envelope, .primary-button");
+  $$(".tilt").forEach((n) => { if (n !== t) { n.classList.remove("tilt"); n.style.transform = ""; } });
+  if (!t) return;
+  const r = t.getBoundingClientRect(), px = (e.clientX - r.left) / r.width - .5, py = (e.clientY - r.top) / r.height - .5;
+  t.classList.add("tilt");
+  t.style.transform = `perspective(800px) rotateX(${(-py * 7).toFixed(2)}deg) rotateY(${(px * 9).toFixed(2)}deg) translateY(-3px)`;
+  t.style.setProperty("--gx", (px + .5) * 100 + "%"); t.style.setProperty("--gy", (py + .5) * 100 + "%");
+}, { passive: true });
+
