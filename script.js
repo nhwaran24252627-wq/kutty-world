@@ -1,0 +1,600 @@
+const $ = (selector, parent = document) => parent.querySelector(selector);
+const $$ = (selector, parent = document) => [...parent.querySelectorAll(selector)];
+
+const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+/* weaker phones get fewer stars and a lower canvas resolution */
+const lowEnd = (navigator.hardwareConcurrency || 8) <= 4 || (navigator.deviceMemory || 8) <= 4;
+const DPR = Math.min(window.devicePixelRatio || 1, lowEnd ? 1 : 1.5);
+const TAU = Math.PI * 2;
+const view = { w: innerWidth, h: innerHeight };
+
+const audio = $("#bgMusic");
+const soundButton = $("#soundButton");
+const loader = $("#loader");
+const loaderWords = $("#loaderWords");
+const loaderHint = $("#loaderHint");
+const volumeSlider = $("#volumeSlider");
+const volumeValue = $("#volumeValue");
+let activeScreen = $("#welcome");
+let isTransitioning = false;
+
+function setVolume(value) {
+  const level = Math.max(0, Math.min(100, Number(value)));
+  audio.volume = level / 100;
+  volumeSlider.value = String(level);
+  volumeValue.textContent = level + "%";
+}
+
+setVolume(30);
+
+function setMusicLabel(playing) {
+  $(".sound-label").textContent = playing ? "Music is playing" : "Play our song";
+  soundButton.setAttribute("aria-label", playing ? "Pause background music" : "Play background music");
+}
+
+async function tryPlayMusic() {
+  try {
+    await audio.play();
+    setMusicLabel(true);
+  } catch {
+    setMusicLabel(false);
+  }
+}
+
+function showLoader(words, duration, showWaitHint = false) {
+  loaderWords.replaceChildren();
+  loaderHint.hidden = !showWaitHint;
+  words.forEach((word, index) => {
+    const line = document.createElement("span");
+    line.textContent = word;
+    line.style.animationDelay = (index * .9) + "s";
+    loaderWords.appendChild(line);
+  });
+  loader.classList.add("active");
+  loader.setAttribute("aria-hidden", "false");
+  return new Promise((resolve) => window.setTimeout(resolve, duration));
+}
+
+function hideLoader() {
+  loader.classList.remove("active");
+  loader.setAttribute("aria-hidden", "true");
+}
+
+function startOpeningLines() {
+  const lines = $$(".opening-lines p");
+  lines.forEach((line) => line.classList.remove("visible"));
+  lines.forEach((line, index) => {
+    window.setTimeout(() => line.classList.add("visible"), index * 1000);
+  });
+}
+
+const heartPortal = $("#heartPortal");
+const wait = (ms) => new Promise((r) => window.setTimeout(r, ms));
+/* page change: the old page fades away and is removed, a 4 second blue heart plays over the stars only,
+   then the new page eases in. Timings match #experience / .hp in styles.css */
+const HEART_MS = 4000;
+const FADE_OUT_MS = 500;
+const ENTER_MS = 900;
+
+/* start fetching the next page's photos while the fade + heart animation plays, so nothing pops in.
+   (the long final gallery stays lazy and loads while scrolling) */
+function warmImages(destination) {
+  if (destination.id === "stage6") return;
+  $$('img[loading="lazy"]', destination).forEach((img) => { img.loading = "eager"; });
+}
+
+function swapScreen(destination) {
+  activeScreen.hidden = true;
+  destination.hidden = false;
+  activeScreen = destination;
+  document.body.dataset.screen = destination.id;
+  window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+  if (destination.id === "stage1") startOpeningLines();
+}
+
+function playHeartZoom() {
+  heartPortal.classList.remove("go");
+  void heartPortal.offsetWidth;
+  heartPortal.classList.add("go");
+}
+
+async function goTo(destinationId, isFinalPath = false) {
+  if (isTransitioning) return;
+  const destination = document.getElementById(destinationId);
+  if (!destination || destination === activeScreen) return;
+  isTransitioning = true;
+  warmImages(destination);
+
+  if (isFinalPath) {
+    await showLoader(
+      ["Nan irukan unnaku for our friendship❄️", "love you as always by your மகன் 🫀", "nan pesunathu hurt panna sorry mannichidu 😓", "Thanks for each and everything yuva❄️"],
+      13000, true
+    );
+  }
+  hideLoader();
+
+  /* 1. current page fades out and is removed completely, so nothing sits behind the heart */
+  document.body.classList.add("transitioning");
+  await wait(FADE_OUT_MS);
+  activeScreen.hidden = true;
+  window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+
+  /* 2. heart plays for the full 4 seconds over the starfield only */
+  playHeartZoom();
+  await wait(HEART_MS);
+
+  /* 3. next page is mounted while still invisible, then eases in */
+  heartPortal.classList.remove("go");
+  swapScreen(destination);
+  void document.body.offsetWidth;
+  document.body.classList.remove("transitioning");
+  await wait(ENTER_MS);
+  isTransitioning = false;
+}
+
+$$("[data-next]").forEach((button) => {
+  button.addEventListener("click", () => {
+    if (activeScreen.id === "welcome") tryPlayMusic();
+    goTo(button.dataset.next, button.dataset.final === "true");
+  });
+});
+
+volumeSlider.addEventListener("input", () => setVolume(volumeSlider.value));
+audio.addEventListener("volumechange", () => {
+  const level = Math.round(audio.volume * 100);
+  volumeSlider.value = String(level);
+  volumeValue.textContent = level + "%";
+});
+
+soundButton.addEventListener("click", async () => {
+  if (audio.paused) {
+    await tryPlayMusic();
+  } else {
+    audio.pause();
+    setMusicLabel(false);
+  }
+});
+
+audio.addEventListener("playing", () => setMusicLabel(true));
+audio.addEventListener("pause", () => setMusicLabel(false));
+
+$$("img[data-media]").forEach((image) => {
+  const frame = image.closest(".photo-frame");
+  const showImage = () => {
+    frame.style.setProperty("--photo-ratio", image.naturalWidth + " / " + image.naturalHeight);
+    frame.classList.add("has-media");
+  };
+  image.addEventListener("load", showImage);
+  if (image.complete && image.naturalWidth > 0) showImage();
+});
+
+$$(".video-frame video").forEach((video) => {
+  const frame = video.closest(".video-frame");
+  video.addEventListener("canplay", () => {
+    frame.hidden = false;
+    frame.classList.add("has-media");
+  }, { once: true });
+});
+
+$$(".candle").forEach((candle) => {
+  candle.addEventListener("click", () => {
+    if (candle.classList.contains("out")) return;
+    candle.classList.add("out");
+    const message = $("#wishMessage");
+    const scene = candle.closest(".cake-scene");
+    const sceneBounds = scene.getBoundingClientRect();
+    const candleBounds = candle.getBoundingClientRect();
+    const sceneScale = sceneBounds.width / scene.offsetWidth;
+    const messageX = (candleBounds.left - sceneBounds.left + candleBounds.width / 2) / sceneScale;
+    scene.classList.add("wish-made");
+    message.hidden = false;
+    message.style.left = messageX + "px";
+    message.textContent = candle.dataset.wish;
+    message.animate(
+      [{ opacity: 0, transform: "translate(-50%, 12px)" }, { opacity: 1, transform: "translate(-50%, 0)" }],
+      { duration: 500, easing: "ease-out" }
+    );
+  });
+});
+
+$("#secretButton").addEventListener("click", () => {
+  const secret = $("#secretMemory");
+  const button = $("#secretButton");
+  const isOpening = secret.hidden;
+  secret.hidden = !isOpening;
+  button.setAttribute("aria-expanded", String(isOpening));
+  if (isOpening) {
+    window.setTimeout(() => secret.scrollIntoView({ behavior: "smooth", block: "center" }), 150);
+  }
+});
+
+$$(".envelope").forEach((envelope) => {
+  envelope.addEventListener("click", () => {
+    envelope.classList.toggle("open");
+  });
+});
+
+const postcard = $("#postcard");
+const letterGate = $("#letterGate");
+const letterPassword = $("#letterPassword");
+const letterGateMessage = $("#letterGateMessage");
+const letter = $("#letter");
+let letterUnlocked = false;
+
+function unwrapLetter() {
+  letterUnlocked = true;
+  letterGate.hidden = true;
+  letter.hidden = false;
+  postcard.setAttribute("aria-expanded", "true");
+  postcard.querySelector(".postcard-prompt").textContent = "A letter from மகன், with all my heart.";
+  window.setTimeout(() => letter.scrollIntoView({ behavior: "smooth", block: "start" }), 260);
+}
+
+postcard.addEventListener("click", () => {
+  if (letterUnlocked) {
+    letter.scrollIntoView({ behavior: "smooth", block: "start" });
+    return;
+  }
+  letterGate.hidden = false;
+  postcard.setAttribute("aria-expanded", "true");
+  postcard.querySelector(".postcard-prompt").textContent = "One small password before your letter ♥";
+  window.setTimeout(() => letterPassword.focus(), 120);
+});
+
+letterGate.addEventListener("submit", (event) => {
+  event.preventDefault();
+  if (letterPassword.value.trim() === "மகன்") {
+    unwrapLetter();
+    return;
+  }
+  letterGateMessage.textContent = "That password is not right. Try again ♥";
+  letterPassword.select();
+});
+
+
+/* ---------- planets: plain DOM nodes, drawn by CSS gradients (no SVG filters) ---------- */
+function buildSpace() {
+  const amb = $(".ambient");
+  const frag = document.createDocumentFragment();
+  [
+    ["sp-mw", ""],
+    ["sp-mars", ""],
+    ["sp-moon", ""],
+    ["sp-giant", '<i class="rb"></i><i class="pl"></i><i class="rf"></i>']
+  ].forEach(([cls, inner]) => {
+    const el = document.createElement("div");
+    el.className = "sp " + cls;
+    el.innerHTML = inner;
+    frag.appendChild(el);
+  });
+  amb.appendChild(frag);
+}
+
+/* ---------- background starfield (canvas, batched draws, adaptive quality) ---------- */
+const warp = (() => {
+  const cv = document.createElement("canvas");
+  cv.id = "warp";
+  $(".ambient").after(cv);
+  const ctx = cv.getContext("2d");
+  const FILL = ["rgb(255,255,255)", "rgb(235,242,255)", "rgb(200,220,255)", "rgb(255,244,225)"];
+  let stars = [];
+  let quality = 1;
+
+  function seed(s) {
+    const depth = Math.random();                       /* far stars: small + slow, near stars: bigger + faster */
+    s.x = Math.random() * view.w;
+    s.y = Math.random() * view.h;
+    s.r = .5 + depth * 1.5;
+    const v = reduceMotion ? 0 : (.014 + depth * .024); /* px per ms */
+    s.vx = -v * .9;
+    s.vy = v * .45;
+    s.t = (Math.random() * FILL.length) | 0;
+    s.g = Math.random() < .25;                         /* glitter sparkle */
+    s.p = Math.random() * TAU;
+    s.a = .45 + depth * .55;
+    return s;
+  }
+
+  function build() {
+    const cap = lowEnd ? 100 : 190;
+    const n = Math.round(Math.min(cap, view.w * view.h / (lowEnd ? 10000 : 6500)) * quality);
+    stars = Array.from({ length: n }, () => seed({}));
+    stars.sort((a, b) => a.t - b.t);                   /* same tint together = fewer fillStyle changes */
+  }
+
+  function resize() {
+    cv.width = Math.round(view.w * DPR);
+    cv.height = Math.round(view.h * DPR);
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    build();
+  }
+
+  function setQuality(q) { quality = q; build(); }
+
+  function draw(now, dt) {
+    const W = view.w, H = view.h;
+    ctx.clearRect(0, 0, W, H);
+    let tint = -1;
+    let glitter = false;
+    for (let i = 0; i < stars.length; i += 1) {
+      const s = stars[i];
+      s.x += s.vx * dt;
+      s.y += s.vy * dt;
+      if (s.x < -10) s.x = W + 10;
+      if (s.y > H + 10) s.y = -10;
+      if (s.x > W + 10) s.x = -10;
+      if (s.y < -10) s.y = H + 10;
+      s.tw = .55 + .45 * Math.sin(now / 700 + s.p);
+      if (s.t !== tint) { tint = s.t; ctx.fillStyle = FILL[tint]; }
+      ctx.globalAlpha = s.a * (.6 + .4 * s.tw);
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, TAU);
+      ctx.fill();
+      if (s.g) glitter = true;
+    }
+    if (glitter) {                                     /* all four-point sparkles in a single stroke */
+      ctx.globalAlpha = .55;
+      ctx.strokeStyle = "rgb(240,246,255)";
+      ctx.lineWidth = .8;
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      for (let i = 0; i < stars.length; i += 1) {
+        const s = stars[i];
+        if (!s.g) continue;
+        const L = s.r * (2.5 + 5 * s.tw);
+        ctx.moveTo(s.x - L, s.y); ctx.lineTo(s.x + L, s.y);
+        ctx.moveTo(s.x, s.y - L); ctx.lineTo(s.x, s.y + L);
+      }
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  return { resize, draw, setQuality };
+})();
+
+/* ---------- foreground: heart/sparkle bursts on touch (pre-rendered sprites, idle = zero work) ---------- */
+const fx = (() => {
+  const cv = document.createElement("canvas");
+  cv.id = "fx";
+  document.body.appendChild(cv);
+  const ctx = cv.getContext("2d");
+  const MAX_BITS = 170;
+  const K = 96 / 46;                                    /* sprite px per font px */
+
+  function makeSprite(rgb) {
+    const c = document.createElement("canvas");
+    c.width = c.height = 96;
+    const g = c.getContext("2d");
+    g.shadowColor = "rgba(" + rgb + ",.9)";
+    g.shadowBlur = 14;
+    g.fillStyle = "rgb(" + rgb + ")";
+    g.font = "46px serif";
+    g.textAlign = "center";
+    g.textBaseline = "middle";
+    g.fillText("♥", 48, 50);
+    return c;
+  }
+  const SPR = { pink: makeSprite("255,80,100"), pale: makeSprite("255,235,228"), rose: makeSprite("255,95,120") };
+
+  let bits = [], rings = [];
+  const holds = new Map();
+  let lastEmit = 0, lastTrail = 0, dirty = false;
+
+  function resize() {
+    cv.width = Math.round(view.w * DPR);
+    cv.height = Math.round(view.h * DPR);
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    dirty = true;
+  }
+
+  function burst(x, y, n = 11) {
+    for (let i = 0; i < n; i += 1) {
+      const ang = Math.random() * TAU, v = .06 + Math.random() * .22, heart = i % 2 === 0;
+      bits.push({ x, y, vx: Math.cos(ang) * v, vy: Math.sin(ang) * v - .08, life: 1, dec: .0006 + Math.random() * .0007,
+        size: heart ? 9 + Math.random() * 13 : 2 + Math.random() * 2.5, heart, spr: SPR.pink });
+    }
+    if (bits.length > MAX_BITS) bits.splice(0, bits.length - MAX_BITS);
+  }
+
+  function emitHold(h) {
+    for (let k = 0; k < 2; k += 1) {
+      bits.push({ x: h.x + (Math.random() - .5) * 46, y: h.y + 26 + Math.random() * 26, vx: (Math.random() - .5) * .03, vy: .02 + Math.random() * .06,
+        life: 1, dec: .0007 + Math.random() * .0006, size: 8 + Math.random() * 12, heart: true, glit: true, ph: Math.random() * TAU,
+        spr: Math.random() < .3 ? SPR.pale : SPR.rose });
+    }
+    if (bits.length > MAX_BITS) bits.splice(0, bits.length - MAX_BITS);
+  }
+
+  function draw(now, dt) {
+    if (!bits.length && !rings.length && !holds.size) {  /* idle: clear once, then do nothing */
+      if (dirty) { ctx.clearRect(0, 0, view.w, view.h); dirty = false; }
+      return;
+    }
+    dirty = true;
+    ctx.clearRect(0, 0, view.w, view.h);
+
+    /* finger / mouse held down: glittering hearts under the thumb */
+    if (!reduceMotion && holds.size) {
+      const emit = now - lastEmit > 50;
+      if (emit) lastEmit = now;
+      holds.forEach((h) => {
+        if (emit) emitHold(h);
+        const pulse = 1 + .12 * Math.sin(now / 130), hy = h.y + 46, w = 30 * K * pulse;
+        ctx.globalAlpha = .95;
+        ctx.drawImage(SPR.rose, h.x - w / 2, hy - w / 2, w, w);
+        const tw = .5 + .5 * Math.sin(now / 90), L = 9 + 12 * tw;
+        ctx.globalAlpha = .5 + .5 * tw;
+        ctx.strokeStyle = "#fff"; ctx.lineWidth = 1.2; ctx.lineCap = "round";
+        ctx.beginPath();
+        ctx.moveTo(h.x - 14 - L, hy - 6); ctx.lineTo(h.x - 14 + L, hy - 6);
+        ctx.moveTo(h.x - 14, hy - 6 - L); ctx.lineTo(h.x - 14, hy - 6 + L);
+        ctx.stroke();
+      });
+    }
+
+    let w = 0;
+    ctx.strokeStyle = "#fff"; ctx.lineWidth = 1.5;
+    for (let i = 0; i < rings.length; i += 1) {
+      const r = rings[i];
+      r.life -= .0022 * dt;
+      if (r.life <= 0) continue;
+      rings[w++] = r;
+      ctx.globalAlpha = r.life * .55;
+      ctx.beginPath(); ctx.arc(r.x, r.y, 10 + (1 - r.life) * 90, 0, TAU); ctx.stroke();
+    }
+    rings.length = w;
+
+    w = 0;
+    ctx.fillStyle = "rgb(255,235,228)";
+    for (let i = 0; i < bits.length; i += 1) {
+      const p = bits[i];
+      p.x += p.vx * dt; p.y += p.vy * dt; p.vy += .00012 * dt; p.life -= p.dec * dt;
+      if (p.life <= 0) continue;
+      bits[w++] = p;
+      if (p.heart) {
+        const s = p.size * K;
+        ctx.globalAlpha = p.glit ? p.life * (.55 + .45 * Math.sin(now / 85 + p.ph)) : p.life;
+        ctx.drawImage(p.spr, p.x - s / 2, p.y - s / 2, s, s);
+        if (p.glit) ctx.fillRect(p.x - 1, p.y - p.size * .9, 2, 2);
+      } else {
+        ctx.globalAlpha = p.life;
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.size * p.life + .4, 0, TAU); ctx.fill();
+      }
+    }
+    bits.length = w;
+    ctx.globalAlpha = 1;
+  }
+
+  addEventListener("pointerdown", (e) => {
+    if (reduceMotion) return;
+    burst(e.clientX, e.clientY);
+    rings.push({ x: e.clientX, y: e.clientY, life: 1 });
+    if (e.pointerType === "mouse") holds.set("m", { x: e.clientX, y: e.clientY });
+  }, { passive: true });
+  addEventListener("pointerup", () => holds.delete("m"), { passive: true });
+  addEventListener("pointercancel", () => holds.delete("m"), { passive: true });
+  addEventListener("pointermove", (e) => {
+    if (holds.has("m")) holds.set("m", { x: e.clientX, y: e.clientY });
+    if (reduceMotion || e.pointerType !== "mouse" || e.timeStamp - lastTrail < 45) return;
+    lastTrail = e.timeStamp; burst(e.clientX, e.clientY, 1);
+  }, { passive: true });
+  const syncTouches = (e) => {
+    holds.forEach((_, k) => { if (k !== "m") holds.delete(k); });
+    [...e.touches].forEach((t) => holds.set(t.identifier, { x: t.clientX, y: t.clientY }));
+  };
+  ["touchstart", "touchmove", "touchend", "touchcancel"].forEach((n) => addEventListener(n, syncTouches, { passive: true }));
+  addEventListener("blur", () => holds.clear());
+
+  return { resize, draw };
+})();
+
+/* ---------- one shared animation loop; quality drops automatically if frames get slow ---------- */
+(() => {
+  let last = performance.now(), frames = 0, acc = 0, downgrades = 0;
+  function loop(now) {
+    requestAnimationFrame(loop);
+    const dt = Math.min(50, now - last);
+    last = now;
+    frames += 1; acc += dt;
+    if (frames === 120) {
+      if (acc / frames > 24 && downgrades < 2 && now > 5000) { downgrades += 1; warp.setQuality(downgrades === 1 ? .65 : .4); }
+      frames = 0; acc = 0;
+    }
+    warp.draw(now, dt);
+    fx.draw(now, dt);
+  }
+  requestAnimationFrame(loop);
+})();
+
+/* resize: ignore the mobile address-bar show/hide (small height changes) so scrolling never reallocates canvases */
+let resizeTimer = 0;
+function onResize() {
+  const w = innerWidth, h = innerHeight;
+  if (w === view.w && Math.abs(h - view.h) < 160) return;
+  view.w = w; view.h = h;
+  warp.resize(); fx.resize();
+}
+addEventListener("resize", () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(onResize, 150); });
+warp.resize();
+fx.resize();
+
+/* ---------- soft hearts rising behind the glass (compositor-only animation) ---------- */
+function buildHearts() {
+  const layer = document.createElement("div");
+  layer.className = "hearts-layer";
+  const colors = ["#ff3b5c", "#ff6b7d", "#d1122d", "#ffd1c9"];
+  const count = lowEnd ? 7 : 12;
+  for (let i = 0; i < count; i += 1) {
+    const h = document.createElement("span"), far = i % 3 === 0;
+    h.textContent = "♥";
+    h.style.setProperty("--x", (Math.random() * 100) + "%");
+    h.style.setProperty("--s", (far ? .7 + Math.random() * .6 : 1.2 + Math.random() * 2.2) + "rem");
+    h.style.setProperty("--c", colors[i % colors.length]);
+    h.style.setProperty("--o", (far ? .22 : .4 + Math.random() * .3).toFixed(2));
+    h.style.setProperty("--t", (16 + Math.random() * 16) + "s");
+    h.style.setProperty("--d", (-Math.random() * 30) + "s");
+    h.style.setProperty("--sx", (-60 + Math.random() * 120) + "px");
+    layer.appendChild(h);
+  }
+  $("#warp").after(layer);
+}
+
+/* ---------- scroll reveal + progress bar ---------- */
+const revealIO = "IntersectionObserver" in window ? new IntersectionObserver((entries) => entries.forEach((e) => {
+  if (e.isIntersecting) { e.target.classList.add("seen"); revealIO.unobserve(e.target); }
+}), { threshold: .1, rootMargin: "0px 0px -5% 0px" }) : null;
+
+function addReveal(elements) {
+  if (!revealIO) {
+    elements.forEach((el) => el.classList.add("seen"));
+    return;
+  }
+  elements.forEach((el) => { el.classList.add("reveal"); revealIO.observe(el); });
+}
+
+function buildScrollFx() {
+  const bar = document.createElement("div");
+  bar.className = "scroll-progress";
+  document.body.appendChild(bar);
+  let ticking = false;
+  const update = () => {
+    ticking = false;
+    const max = document.documentElement.scrollHeight - innerHeight;
+    bar.style.transform = "scaleX(" + (max > 0 ? Math.min(1, scrollY / max) : 0) + ")";
+  };
+  const schedule = () => { if (!ticking) { ticking = true; requestAnimationFrame(update); } };
+  addEventListener("scroll", schedule, { passive: true });
+  addEventListener("resize", schedule);
+  update();
+}
+
+/* ---------- final page: photos one below another, no names, plain scroll ---------- */
+function buildMemoryStack() {
+  const holder = $(".final-media");
+  if (!holder) return;
+  [...holder.children].forEach((item) => {
+    const step = document.createElement("div");
+    step.className = "memory-step";
+    holder.insertBefore(step, item);
+    step.appendChild(item);
+    if (item.matches(".video-frame")) {
+      step.hidden = item.hidden;
+      new MutationObserver(() => { step.hidden = item.hidden; }).observe(item, { attributes: true, attributeFilter: ["hidden"] });
+    }
+  });
+  const hint = document.createElement("span");
+  hint.className = "scroll-hint";
+  hint.textContent = "scroll pannu ↓";
+  holder.before(hint);
+  addReveal($$(".memory-step", holder));
+}
+
+buildSpace();
+buildHearts();
+buildMemoryStack();
+buildScrollFx();
+addReveal($$(".memory, .envelope, .secret-wrap, .final-note, .postcard, .letter-body p, .stage-lead, .wish-line, .restart-button"));
+setMusicLabel(false);
+tryPlayMusic();
+document.addEventListener("pointerdown", tryPlayMusic, { once: true, passive: true });
